@@ -270,16 +270,21 @@ function toggleSidebar(open) {
 /**
  * Collapse sidebar (desktop)
  */
+/**
+ * Collapse sidebar (desktop & mobile)
+ */
 function collapseSidebar() {
     elements.entriesSidebar.classList.add('collapsed');
+    elements.entriesSidebar.classList.remove('open'); // For mobile
     localStorage.setItem('entriesSidebarCollapsed', 'true');
 }
 
 /**
- * Expand sidebar (desktop)
+ * Expand sidebar (desktop & mobile)
  */
 function expandSidebar() {
     elements.entriesSidebar.classList.remove('collapsed');
+    elements.entriesSidebar.classList.add('open'); // For mobile
     localStorage.setItem('entriesSidebarCollapsed', 'false');
 }
 
@@ -439,15 +444,19 @@ function renderTodos() {
     // Always show active todos + one empty task
     const todoSlots = [...activeTodos, { text: '', completed: false }];
 
+    const isMobile = window.innerWidth <= 768;
+
     elements.todoList.innerHTML = todoSlots.map((todo, index) => {
         const isPriority = index < 3;
         const marker = isPriority ? `${index + 1}.` : '•';
         const markerClass = isPriority ? 'todo-number' : 'todo-bullet';
+        // Disable drag on mobile to fix scrolling issues
+        const isDraggable = !isMobile && !!todo.text;
 
         return `
     <div class="todo-item" 
          data-index="${index}" 
-         draggable="${!!todo.text}" 
+         draggable="${isDraggable}" 
          role="listitem">
       <span class="${markerClass}">${marker}</span>
       <div class="todo-text" 
@@ -630,9 +639,16 @@ function renderCompleted() {
         checkbox.addEventListener('click', (e) => {
             const index = parseInt(e.target.dataset.index);
             if (todos[index]) {
-                todos[index].completed = false;
-                saveTodos();
-                renderTodos();
+                // Visual feedback
+                e.target.classList.remove('checked');
+                const item = e.target.closest('.completed-item');
+                if (item) item.style.opacity = '0.5';
+
+                setTimeout(() => {
+                    todos[index].completed = false;
+                    saveTodos();
+                    renderTodos();
+                }, 150);
             }
         });
     });
@@ -642,10 +658,16 @@ function renderCompleted() {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.target.dataset.index);
             if (todos[index]) {
-                todos[index].archived = true;
-                saveTodos();
-                renderTodos();
-                renderArchived();
+                // Visual feedback
+                const item = e.target.closest('.completed-item');
+                if (item) item.style.opacity = '0';
+
+                setTimeout(() => {
+                    todos[index].archived = true;
+                    saveTodos();
+                    renderTodos();
+                    renderArchived();
+                }, 150);
             }
         });
     });
@@ -655,9 +677,15 @@ function renderCompleted() {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.target.dataset.index);
             if (todos[index]) {
-                todos.splice(index, 1);
-                saveTodos();
-                renderTodos();
+                // Visual feedback
+                const item = e.target.closest('.completed-item');
+                if (item) item.style.opacity = '0';
+
+                setTimeout(() => {
+                    todos.splice(index, 1);
+                    saveTodos();
+                    renderTodos();
+                }, 150);
             }
         });
     });
@@ -713,10 +741,16 @@ function renderArchived(searchQuery = '') {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.target.dataset.index);
             if (todos[index]) {
-                todos[index].archived = false;
-                saveTodos();
-                renderTodos();
-                renderArchived();
+                // Visual feedback
+                const item = e.target.closest('.archived-item');
+                if (item) item.style.opacity = '0';
+
+                setTimeout(() => {
+                    todos[index].archived = false;
+                    saveTodos();
+                    renderTodos();
+                    renderArchived(elements.archivedSearchInput.value);
+                }, 150);
             }
         });
     });
@@ -726,11 +760,16 @@ function renderArchived(searchQuery = '') {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.target.dataset.index);
             if (todos[index]) {
-                todos.splice(index, 1);
-                saveTodos();
-                renderTodos();
-                const currentSearch = elements.archivedSearchInput.value;
-                renderArchived(currentSearch);
+                // Visual feedback
+                const item = e.target.closest('.archived-item');
+                if (item) item.style.opacity = '0';
+
+                setTimeout(() => {
+                    todos.splice(index, 1);
+                    saveTodos();
+                    renderTodos();
+                    renderArchived(elements.archivedSearchInput.value);
+                }, 150);
             }
         });
     });
@@ -784,13 +823,21 @@ function addTodoEventListeners() {
             const index = parseInt(e.target.dataset.index);
             const activeTodos = todos.filter(t => !t.completed && !t.archived);
             if (index < activeTodos.length) {
-                const todo = activeTodos[index];
-                const actualIndex = todos.findIndex(t => t === todo);
-                if (actualIndex !== -1) {
-                    todos[actualIndex].completed = true;
-                    saveTodos();
-                    renderTodos();
-                }
+                // Visual feedback first
+                e.target.classList.add('checked');
+                const todoItem = e.target.closest('.todo-item');
+                if (todoItem) todoItem.style.opacity = '0.5';
+
+                // Delay data update
+                setTimeout(() => {
+                    const todo = activeTodos[index];
+                    const actualIndex = todos.findIndex(t => t === todo);
+                    if (actualIndex !== -1) {
+                        todos[actualIndex].completed = true;
+                        saveTodos();
+                        renderTodos();
+                    }
+                }, 150);
             }
         });
     });
@@ -1063,15 +1110,24 @@ function loadTodayEntry() {
  * Restore sidebar states from localStorage
  */
 function restoreSidebarStates() {
+    const isMobile = window.innerWidth <= 768;
+
     // Restore entries sidebar state
     const entriesSidebarCollapsed = localStorage.getItem('entriesSidebarCollapsed');
-    if (entriesSidebarCollapsed === 'true') {
+    // Default to collapsed on mobile if not set, or if explicitly set to true
+    if (entriesSidebarCollapsed === 'true' || (entriesSidebarCollapsed === null && isMobile)) {
         elements.entriesSidebar.classList.add('collapsed');
+    } else if (entriesSidebarCollapsed === 'false') {
+        // If explicitly open, we might need to add 'open' class for mobile
+        if (isMobile) {
+            elements.entriesSidebar.classList.add('open');
+        }
     }
 
     // Restore todo sidebar state
     const todoSidebarCollapsed = localStorage.getItem('todoSidebarCollapsed');
-    if (todoSidebarCollapsed === 'true') {
+    // Default to collapsed on mobile if not set, or if explicitly set to true
+    if (todoSidebarCollapsed === 'true' || (todoSidebarCollapsed === null && isMobile)) {
         elements.todoSidebar.classList.add('collapsed');
     }
 }

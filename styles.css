@@ -53,6 +53,8 @@
   /* 24px */
   --font-size-3xl: 2rem;
   /* 32px */
+  --font-size-3xl: 2rem;
+  /* 32px */
 
   --line-height-tight: 1.25;
   --line-height-normal: 1.5;
@@ -125,19 +127,35 @@ body {
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
   min-height: 100vh;
-  height: 100vh;
-  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+}
+
+/* Optimize touch targets */
+button,
+.todo-checkbox,
+.mood-btn,
+.entry-item,
+.todo-item {
+  touch-action: manipulation;
+  /* Remove double-tap zoom delay */
+  cursor: pointer;
 }
 
 /* === Layout === */
 .app-container {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-4);
-  height: 100vh;
+  padding: var(--space-5) var(--space-8);
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-6);
+  transition: all var(--duration-normal) var(--ease-smooth);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* === Header === */
@@ -158,7 +176,7 @@ body {
 
 .app-title {
   font-family: var(--font-journal);
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-3xl);
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
@@ -1323,31 +1341,61 @@ body {
   }
 
   .app-container {
-    padding: var(--space-3) var(--space-3);
+    padding: var(--space-2);
     gap: var(--space-2);
   }
 
   .app-title {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-2xl);
   }
 
   .journal-textarea {
-    padding: var(--space-4);
+    padding: var(--space-3);
     font-size: var(--font-size-base);
+    min-height: 80px;
+    /* Shorter for mobile */
+    height: auto;
+  }
+
+  .journal-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
   }
 
   .mood-selector {
-    padding: var(--space-3);
-    gap: var(--space-3);
+    padding: var(--space-2);
+    gap: var(--space-2);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mood-label {
+    margin-bottom: var(--space-1);
   }
 
   .mood-options {
     gap: var(--space-2);
+    width: 100%;
+    justify-content: space-between;
   }
 
   .mood-btn {
     font-size: var(--font-size-xl);
     padding: var(--space-2);
+  }
+
+  /* Move sidebar toggles to bottom on mobile */
+  .expand-sidebar-btn {
+    top: auto;
+    bottom: var(--space-5);
+    display: flex;
+    /* Ensure it's visible */
+  }
+
+  .expand-todo-btn {
+    top: auto;
+    bottom: var(--space-5);
   }
 
   .settings-panel {
@@ -1545,15 +1593,26 @@ body {
 /* Responsive welcome modal */
 @media (max-width: 768px) {
   .welcome-content {
-    padding: var(--space-5);
-    max-height: 95vh;
+    padding: var(--space-4);
+    max-height: 80vh;
+    width: 90%;
+    margin: 0 auto;
   }
 
   .welcome-title {
     font-size: var(--font-size-xl);
+    margin-bottom: var(--space-3);
   }
 
   .feature-icon {
     font-size: var(--font-size-xl);
+  }
+
+  .welcome-features {
+    gap: var(--space-3);
+  }
+
+  .welcome-features li {
+    gap: var(--space-2);
   }
 }
