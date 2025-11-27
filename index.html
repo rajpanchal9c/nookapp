@@ -56,6 +56,10 @@
       </div>
     </div>
 
+    <div class="search-container" style="margin-bottom: var(--space-4);">
+      <input type="text" id="entrySearchInput" placeholder="Search entries..." class="search-input">
+    </div>
+
     <div class="entries-list" id="entriesList">
       <p class="empty-state">No entries yet. Start writing!</p>
     </div>
@@ -156,10 +160,17 @@
 
       <div class="journal-footer">
         <span class="character-count" id="characterCount">0 characters</span>
+
         <button class="btn btn-submit" id="submitBtn">
           <span>✓</span>
           Save Entry
         </button>
+      </div>
+
+      <div class="feedback-container">
+        <a href="mailto:?subject=Nook%20Feedback" class="feedback-link">
+          💬 Give Feedback
+        </a>
       </div>
     </main>
   </div>
@@ -172,49 +183,26 @@
     </div>
 
     <div class="settings-section">
-      <h3 class="settings-section-title">Export Your Data</h3>
+      <h3 class="settings-section-title">Data Management</h3>
       <p class="settings-section-description">
-        Download all your data as a JSON file, including journal entries and to-dos (active, completed, and archived).
-        Perfect for backups or importing elsewhere.
+        Your data is stored locally in your browser. Export it regularly to keep it safe.
       </p>
-      <button class="btn btn-primary" id="exportBtn">
-        <span>📥</span>
-        Export All Data
+      <button class="btn btn-primary" id="exportBtn" style="margin-bottom: var(--space-3);">
+        <span>💾</span> Export Data (JSON)
       </button>
-    </div>
-
-    <div class="settings-section">
-      <h3 class="settings-section-title">Import Data</h3>
-      <p class="settings-section-description">
-        Restore your data from a backup file. <strong>Warning: This will overwrite your current data.</strong>
-      </p>
-      <input type="file" id="importFile" accept=".json" style="display: none;">
       <button class="btn btn-secondary" id="importBtn">
-        <span>📤</span>
-        Import Backup
+        <span>📂</span> Import Data
       </button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
     </div>
 
     <div class="settings-section">
       <h3 class="settings-section-title">About</h3>
       <p class="settings-section-description">
-        Nook is your private space for journaling and task management. All your data is stored locally in your browser
-        and never
-        sent to any server. Clearing your browser data will delete your entries, so remember to export regularly.
+        Nook is a minimalist brain dump app designed to help you clear your mind.
       </p>
       <a href="about.html" class="btn btn-secondary" style="display: inline-block; text-decoration: none;">
         Learn More About Nook
-      </a>
-    </div>
-
-    <div class="settings-section">
-      <h3 class="settings-section-title">Feedback</h3>
-      <p class="settings-section-description">
-        Found a bug or have a feature request? Let us know!
-      </p>
-      <a href="mailto:?subject=Nook%20Feedback" class="btn btn-secondary"
-        style="display: inline-block; text-decoration: none;">
-        <span>💬</span> Give Feedback
       </a>
     </div>
   </aside>
@@ -273,12 +261,14 @@
         </div>
       </div>
 
+
+
       <button class="welcome-btn" id="welcomeCloseBtn">Get Started</button>
     </div>
   </div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=41"></script>
+  <script src="app.js?v=44"></script>
 </body>
 
 </html>

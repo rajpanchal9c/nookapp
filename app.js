@@ -62,7 +62,8 @@ const elements = {
     archivedSearchInput: document.getElementById('archivedSearchInput'),
     archivedList: document.getElementById('archivedList'),
     welcomeModal: document.getElementById('welcomeModal'),
-    welcomeCloseBtn: document.getElementById('welcomeCloseBtn')
+    welcomeCloseBtn: document.getElementById('welcomeCloseBtn'),
+    entrySearchInput: document.getElementById('entrySearchInput')
 };
 
 // === Utility Functions ===
@@ -924,12 +925,28 @@ function addTodoEventListeners() {
 /**
  * Render entries list in sidebar
  */
-function renderEntriesList() {
+function renderEntriesList(searchQuery = '') {
     const entries = getAllEntries();
-    const entryDates = Object.keys(entries).sort().reverse(); // Newest first
+    let entryDates = Object.keys(entries).sort().reverse(); // Newest first
+
+    // Filter by search query
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        entryDates = entryDates.filter(date => {
+            const entry = entries[date];
+            const contentMatch = entry.content && entry.content.toLowerCase().includes(query);
+            const moodMatch = entry.mood && entry.mood.toLowerCase().includes(query);
+            const dateMatch = formatDateShort(date).toLowerCase().includes(query);
+            return contentMatch || moodMatch || dateMatch;
+        });
+    }
 
     if (entryDates.length === 0) {
-        elements.entriesList.innerHTML = '<p class="empty-state">No entries yet. Start writing!</p>';
+        if (searchQuery) {
+            elements.entriesList.innerHTML = '<p class="empty-state">No entries match your search.</p>';
+        } else {
+            elements.entriesList.innerHTML = '<p class="empty-state">No entries yet. Start writing!</p>';
+        }
         return;
     }
 
@@ -953,7 +970,10 @@ function renderEntriesList() {
         item.addEventListener('click', () => {
             const date = item.dataset.date;
             loadEntryForDate(date);
-            toggleSidebar(false);
+            // On mobile, close sidebar
+            if (window.innerWidth <= 768) {
+                collapseSidebar();
+            }
         });
     });
 }
@@ -1219,6 +1239,9 @@ function init() {
     elements.deleteAllArchivedBtn.addEventListener('click', deleteAllArchived);
     elements.archivedSearchInput.addEventListener('input', handleArchivedSearch);
     elements.welcomeCloseBtn.addEventListener('click', closeWelcomeModal);
+    elements.entrySearchInput.addEventListener('input', (e) => {
+        renderEntriesList(e.target.value);
+    });
 
     // Calendar event delegation
     elements.calendarGrid.addEventListener('click', handleCalendarClick);
