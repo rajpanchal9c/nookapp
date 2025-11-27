@@ -276,6 +276,7 @@ function toggleSidebar(open) {
 function collapseSidebar() {
     elements.entriesSidebar.classList.add('collapsed');
     elements.entriesSidebar.classList.remove('open'); // For mobile
+    document.body.classList.remove('entries-sidebar-open');
     localStorage.setItem('entriesSidebarCollapsed', 'true');
 }
 
@@ -285,6 +286,7 @@ function collapseSidebar() {
 function expandSidebar() {
     elements.entriesSidebar.classList.remove('collapsed');
     elements.entriesSidebar.classList.add('open'); // For mobile
+    document.body.classList.add('entries-sidebar-open');
     localStorage.setItem('entriesSidebarCollapsed', 'false');
 }
 
@@ -1115,20 +1117,33 @@ function restoreSidebarStates() {
     // Restore entries sidebar state
     const entriesSidebarCollapsed = localStorage.getItem('entriesSidebarCollapsed');
     // Default to collapsed on mobile if not set, or if explicitly set to true
-    if (entriesSidebarCollapsed === 'true' || (entriesSidebarCollapsed === null && isMobile)) {
+    const shouldCollapseEntries = entriesSidebarCollapsed === 'true' || (entriesSidebarCollapsed === null && isMobile);
+
+    if (shouldCollapseEntries) {
         elements.entriesSidebar.classList.add('collapsed');
-    } else if (entriesSidebarCollapsed === 'false') {
-        // If explicitly open, we might need to add 'open' class for mobile
+        document.body.classList.remove('entries-sidebar-open');
+    } else {
+        elements.entriesSidebar.classList.remove('collapsed');
         if (isMobile) {
             elements.entriesSidebar.classList.add('open');
         }
+        document.body.classList.add('entries-sidebar-open');
     }
 
     // Restore todo sidebar state
     const todoSidebarCollapsed = localStorage.getItem('todoSidebarCollapsed');
     // Default to collapsed on mobile if not set, or if explicitly set to true
-    if (todoSidebarCollapsed === 'true' || (todoSidebarCollapsed === null && isMobile)) {
+    const shouldCollapseTodo = todoSidebarCollapsed === 'true' || (todoSidebarCollapsed === null && isMobile);
+
+    if (shouldCollapseTodo) {
         elements.todoSidebar.classList.add('collapsed');
+        document.body.classList.remove('todo-sidebar-open');
+    } else {
+        elements.todoSidebar.classList.remove('collapsed');
+        if (isMobile) {
+            elements.todoSidebar.classList.add('open');
+        }
+        document.body.classList.add('todo-sidebar-open');
     }
 }
 
