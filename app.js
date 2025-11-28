@@ -1226,7 +1226,8 @@ async function suggestTasks() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Failed to generate suggestions');
+            // Use the detailed message from the server if available
+            throw new Error(data.message || data.error || 'Failed to generate suggestions');
         }
 
         const { tasks } = data;
