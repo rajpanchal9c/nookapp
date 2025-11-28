@@ -155,16 +155,19 @@
 
     <!-- Journal Entry -->
     <main class="journal-container">
-      <textarea class="journal-textarea" id="journalTextarea" placeholder="What's on your mind?"
-        aria-label="Journal entry" autofocus></textarea>
+      <div class="journal-input-wrapper">
+        <textarea class="journal-textarea" id="journalTextarea" placeholder="What's on your mind?"
+          aria-label="Journal entry" autofocus></textarea>
+
+        <!-- Floating AI Button -->
+        <button class="btn-ai-float" id="suggestTasksBtn" title="Suggest tasks from your journal">
+          <span class="ai-icon" id="suggestTasksIcon">✨</span>
+          <span class="ai-text" id="suggestTasksText">Suggest Tasks</span>
+        </button>
+      </div>
 
       <div class="journal-footer">
         <span class="character-count" id="characterCount">0 characters</span>
-
-        <button class="btn btn-secondary btn-ai" id="suggestTasksBtn">
-          <span id="suggestTasksIcon">✨</span>
-          <span id="suggestTasksText">Suggest Tasks</span>
-        </button>
 
         <button class="btn btn-submit" id="submitBtn">
           <span>✓</span>
@@ -273,7 +276,7 @@
   </div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=47"></script>
+  <script src="app.js?v=48"></script>
 </body>
 
 </html>
