@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 
 export default async function handler(req, res) {
     // Only allow POST requests
@@ -15,23 +15,16 @@ export default async function handler(req, res) {
         }
 
         // Get API key from environment variable
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GROQ_API_KEY;
 
         // Check for API key
         if (!apiKey) {
-            console.error('GEMINI_API_KEY not configured');
+            console.error('GROQ_API_KEY not configured');
             return res.status(500).json({ error: 'AI service not configured' });
         }
 
-        // Initialize Gemini
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.0-pro", // Try full version name
-            generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 500,
-            }
-        });
+        // Initialize Groq
+        const groq = new Groq({ apiKey });
 
         // Create the prompt
         const prompt = `You are a helpful assistant that extracts actionable tasks from journal entries.
@@ -49,9 +42,27 @@ ${content}
 
 Tasks (JSON array only):`;
 
-        // Call Gemini API
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text().trim();
+        // Call Groq API
+        const completion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            model: "llama-3.1-8b-instant", // Fast and free
+            temperature: 0.3,
+            max_tokens: 500,
+        });
+
+        const responseText = completion.choices[0]?.message?.content?.trim();
+
+        if (!responseText) {
+            return res.status(500).json({
+                error: 'No response from AI',
+                tasks: []
+            });
+        }
 
         // Parse the JSON response
         let tasks;
