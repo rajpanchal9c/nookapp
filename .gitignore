@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Local configuration (contains API keys)
+api/config.local.js
+
+# OS files
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+.vercel
+.env*.local
