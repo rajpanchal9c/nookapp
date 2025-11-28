@@ -298,6 +298,8 @@ button,
 }
 
 .journal-textarea {
+  flex: 1;
+  /* Make textarea fill the wrapper */
   width: 100%;
   min-height: 300px;
   padding: var(--space-4);
