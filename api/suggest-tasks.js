@@ -1,5 +1,3 @@
-import Groq from "groq-sdk";
-
 export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
@@ -23,9 +21,6 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'AI service not configured' });
         }
 
-        // Initialize Groq
-        const groq = new Groq({ apiKey });
-
         // Create the prompt
         const prompt = `You are a helpful assistant that extracts actionable tasks from journal entries.
 
@@ -42,20 +37,37 @@ ${content}
 
 Tasks (JSON array only):`;
 
-        // Call Groq API
-        const completion = await groq.chat.completions.create({
-            messages: [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            model: "llama-3.1-8b-instant", // Fast and free
-            temperature: 0.3,
-            max_tokens: 500,
+        // Call Groq API using fetch
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                model: 'llama-3.1-8b-instant',
+                temperature: 0.3,
+                max_tokens: 500,
+            })
         });
 
-        const responseText = completion.choices[0]?.message?.content?.trim();
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Groq API error:', errorText);
+            return res.status(500).json({
+                error: 'AI service error',
+                message: `API returned ${response.status}`
+            });
+        }
+
+        const data = await response.json();
+        const responseText = data.choices?.[0]?.message?.content?.trim();
 
         if (!responseText) {
             return res.status(500).json({
