@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         // Initialize Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "models/gemini-pro", // Try with models/ prefix
+            model: "gemini-1.0-pro", // Try full version name
             generationConfig: {
                 temperature: 0.3,
                 maxOutputTokens: 500,
