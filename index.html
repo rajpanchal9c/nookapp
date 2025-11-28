@@ -158,12 +158,32 @@
       <div class="journal-input-wrapper">
         <textarea class="journal-textarea" id="journalTextarea" placeholder="What's on your mind?"
           aria-label="Journal entry" autofocus></textarea>
+      </div>
 
-        <!-- Floating AI Button -->
-        <button class="btn-ai-float" id="suggestTasksBtn" title="Suggest tasks from your journal">
-          <span class="ai-icon" id="suggestTasksIcon">✨</span>
-          <span class="ai-text" id="suggestTasksText">Suggest Tasks</span>
+      <!-- AI Actions -->
+      <div class="journal-footer-actions">
+        <button id="suggestTasksBtn" class="btn-ai-float" aria-label="Suggest tasks from entry">
+          <span class="ai-icon">✨</span>
+          <span class="ai-text">Suggest Tasks</span>
         </button>
+      </div>
+
+      <!-- AI Suggestions Modal (Hidden by default) -->
+      <div id="aiSuggestionsModal" class="ai-suggestions-modal" hidden>
+        <div class="ai-suggestions-header">
+          <h3>Suggested Tasks</h3>
+          <button id="closeAiModal" class="btn-icon-only" aria-label="Close suggestions">✕</button>
+        </div>
+        <div class="ai-privacy-notice">
+          <span class="lock-icon">🔒</span>
+          Your text is only used to generate these suggestions and is not used to train external models.
+        </div>
+        <div id="aiSuggestionsList" class="ai-suggestions-list">
+          <!-- Tasks will be injected here -->
+        </div>
+        <div class="ai-suggestions-actions">
+          <button id="addSelectedTasksBtn" class="btn-primary">Add Selected</button>
+        </div>
       </div>
 
       <div class="journal-footer">
@@ -276,7 +296,7 @@
   </div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=61"></script>
+  <script src="app.js?v=62"></script>
 </body>
 
 </html>

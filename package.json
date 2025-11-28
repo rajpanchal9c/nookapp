@@ -1,5 +1,11 @@
 {
-  "dependencies": {},
+  "scripts": {
+    "start:local": "node local-server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2"
+  },
   "devDependencies": {
     "vercel": "^48.12.0"
   }

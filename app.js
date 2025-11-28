@@ -66,10 +66,155 @@ const elements = {
     entrySearchInput: document.getElementById('entrySearchInput'),
     suggestTasksBtn: document.getElementById('suggestTasksBtn'),
     suggestTasksIcon: document.getElementById('suggestTasksIcon'),
-    suggestTasksText: document.getElementById('suggestTasksText')
+    suggestTasksText: document.getElementById('suggestTasksText'),
+    aiSuggestionsModal: document.getElementById('aiSuggestionsModal'),
+    aiSuggestionsList: document.getElementById('aiSuggestionsList'),
+    addSelectedTasksBtn: document.getElementById('addSelectedTasksBtn'),
+    closeAiModal: document.getElementById('closeAiModal'),
 };
 
 // === Utility Functions ===
+
+// AI Task Suggestion
+const suggestTasks = async () => {
+    const content = elements.journalTextarea.value.trim();
+
+    if (!content) {
+        showFeedback('Please write something first!', 'error');
+        return;
+    }
+
+    // Show loading state
+    elements.suggestTasksBtn.classList.add('loading');
+    elements.suggestTasksBtn.disabled = true;
+
+    try {
+        const response = await fetch('/api/suggest-tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || data.error || 'Failed to generate suggestions');
+        }
+
+        const { tasks } = data;
+
+        if (tasks.length === 0) {
+            showFeedback('No actionable tasks found in your entry.', 'neutral');
+        } else {
+            // Render tasks in modal
+            renderSuggestions(tasks);
+            // Show modal
+            elements.aiSuggestionsModal.hidden = false;
+        }
+
+    } catch (error) {
+        console.error('Error suggesting tasks:', error);
+        showFeedback(error.message, 'error');
+    } finally {
+        // Reset loading state
+        elements.suggestTasksBtn.classList.remove('loading');
+        elements.suggestTasksBtn.disabled = false;
+    }
+};
+
+const renderSuggestions = (tasks) => {
+    elements.aiSuggestionsList.innerHTML = '';
+
+    tasks.forEach((task, index) => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.innerHTML = `
+            <input type="checkbox" id="suggestion-${index}" class="suggestion-checkbox" checked>
+            <label for="suggestion-${index}" class="suggestion-text">${task}</label>
+        `;
+
+        // Toggle checkbox on item click (if not clicking checkbox directly)
+        item.addEventListener('click', (e) => {
+            if (e.target.type !== 'checkbox') {
+                const checkbox = item.querySelector('.suggestion-checkbox');
+                checkbox.checked = !checkbox.checked;
+            }
+        });
+
+        elements.aiSuggestionsList.appendChild(item);
+    });
+};
+
+const addSelectedTasks = () => {
+    const checkboxes = elements.aiSuggestionsList.querySelectorAll('.suggestion-checkbox:checked');
+    let addedCount = 0;
+
+    checkboxes.forEach(checkbox => {
+        const taskText = checkbox.nextElementSibling.textContent;
+        // Assuming addTodo function exists elsewhere in the code
+        // addTodo(taskText); 
+        console.log(`Adding task: ${taskText}`); // Placeholder for addTodo
+        addedCount++;
+    });
+
+    if (addedCount > 0) {
+        showFeedback(`Added ${addedCount} task${addedCount !== 1 ? 's' : ''} to your list!`, 'success');
+        elements.aiSuggestionsModal.hidden = true;
+
+        // Scroll to todo list on mobile
+        if (window.innerWidth <= 768) {
+            // Assuming 'sidebar' is the correct element for the todo list sidebar
+            // elements.sidebar.classList.add('active'); 
+            console.log('Scrolling to todo list on mobile'); // Placeholder
+        }
+    } else {
+        showFeedback('No tasks selected.', 'neutral');
+    }
+};
+
+// Placeholder for showFeedback function, assuming it exists elsewhere
+function showFeedback(message, type) {
+    console.log(`Feedback (${type}): ${message}`);
+}
+
+// Placeholder for addTodo function, assuming it exists elsewhere
+function addTodo(taskText) {
+    console.log(`Adding todo: ${taskText}`);
+    // Example: todos.push({ id: Date.now(), text: taskText, completed: false });
+    // renderTodos();
+}
+
+const init = () => {
+    // ... existing listeners ...
+
+    // AI Listeners
+    if (elements.suggestTasksBtn) {
+        elements.suggestTasksBtn.addEventListener('click', suggestTasks);
+    }
+
+    if (elements.addSelectedTasksBtn) {
+        elements.addSelectedTasksBtn.addEventListener('click', addSelectedTasks);
+    }
+
+    if (elements.closeAiModal) {
+        elements.closeAiModal.addEventListener('click', () => {
+            elements.aiSuggestionsModal.hidden = true;
+        });
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!elements.aiSuggestionsModal.hidden &&
+            !elements.aiSuggestionsModal.contains(e.target) &&
+            !elements.suggestTasksBtn.contains(e.target)) {
+            elements.aiSuggestionsModal.hidden = true;
+        }
+    });
+
+    // ... existing code ...
+};
 
 /**
  * Get today's date in YYYY-MM-DD format
@@ -1199,6 +1344,9 @@ function closeWelcomeModal() {
 /**
  * Suggest tasks using AI based on journal content
  */
+/**
+ * Suggest tasks using AI based on journal content
+ */
 async function suggestTasks() {
     const content = elements.journalTextarea.value.trim();
 
@@ -1211,7 +1359,6 @@ async function suggestTasks() {
     // Set loading state
     elements.suggestTasksBtn.disabled = true;
     elements.suggestTasksBtn.classList.add('loading');
-    elements.suggestTasksText.textContent = 'Analyzing...';
 
     try {
         // Call the API
@@ -1226,7 +1373,6 @@ async function suggestTasks() {
         const data = await response.json();
 
         if (!response.ok) {
-            // Use the detailed message from the server if available
             throw new Error(data.message || data.error || 'Failed to generate suggestions');
         }
 
@@ -1234,68 +1380,108 @@ async function suggestTasks() {
 
         // Handle empty results
         if (!tasks || tasks.length === 0) {
-            alert('No actionable tasks found in your journal entry. Try writing about specific things you need to do!');
+            alert('No actionable tasks found. Try writing about specific things you need to do!');
             return;
         }
 
-        // Add tasks to the todo list
-        let addedCount = 0;
-        tasks.forEach(taskText => {
-            // Check if task already exists (case-insensitive)
-            const exists = todos.some(t =>
-                t.text.toLowerCase().trim() === taskText.toLowerCase().trim()
-            );
-
-            if (!exists) {
-                todos.push({
-                    text: taskText,
-                    completed: false,
-                    archived: false
-                });
-                addedCount++;
-            }
-        });
-
-        // Save and render
-        if (addedCount > 0) {
-            saveTodos();
-            renderTodos();
-
-            // Show success message
-            const message = addedCount === 1
-                ? '✓ Added 1 task to your to-do list!'
-                : `✓ Added ${addedCount} tasks to your to-do list!`;
-
-            showButtonFeedback(elements.suggestTasksBtn, message);
-
-            // Expand todo sidebar if collapsed (on desktop)
-            if (window.innerWidth > 768 && elements.todoSidebar.classList.contains('collapsed')) {
-                expandTodoSidebar();
-            }
-        } else {
-            alert('All suggested tasks are already in your to-do list!');
-        }
+        // Render tasks in modal
+        renderSuggestions(tasks);
+        // Show modal
+        elements.aiSuggestionsModal.hidden = false;
 
     } catch (error) {
         console.error('Error suggesting tasks:', error);
-
-        // Show more specific error message
         let errorMessage = 'Failed to generate task suggestions. ';
-
         if (error.message.includes('AI service not configured')) {
-            errorMessage += 'The AI service is not set up yet. Please add your GEMINI_API_KEY to Vercel environment variables.';
-        } else if (error.message.includes('Failed to fetch')) {
-            errorMessage += 'Could not connect to the API. Make sure you\'ve deployed to Vercel.';
+            errorMessage += 'The AI service is not set up yet.';
         } else {
             errorMessage += error.message || 'Please try again later.';
         }
-
         alert(errorMessage);
     } finally {
         // Reset button state
         elements.suggestTasksBtn.disabled = false;
         elements.suggestTasksBtn.classList.remove('loading');
-        elements.suggestTasksText.textContent = 'Suggest Tasks';
+    }
+}
+
+/**
+ * Render suggestions in the modal
+ */
+function renderSuggestions(tasks) {
+    elements.aiSuggestionsList.innerHTML = '';
+
+    tasks.forEach((task, index) => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.innerHTML = `
+            <input type="checkbox" id="suggestion-${index}" class="suggestion-checkbox" checked>
+            <label for="suggestion-${index}" class="suggestion-text">${task}</label>
+        `;
+
+        // Toggle checkbox on item click
+        item.addEventListener('click', (e) => {
+            if (e.target.type !== 'checkbox') {
+                const checkbox = item.querySelector('.suggestion-checkbox');
+                checkbox.checked = !checkbox.checked;
+            }
+        });
+
+        elements.aiSuggestionsList.appendChild(item);
+    });
+}
+
+/**
+ * Add selected tasks from modal to todo list
+ */
+function addSelectedTasks() {
+    const checkboxes = elements.aiSuggestionsList.querySelectorAll('.suggestion-checkbox:checked');
+    let addedCount = 0;
+
+    checkboxes.forEach(checkbox => {
+        const taskText = checkbox.nextElementSibling.textContent;
+        // Check if task already exists (case-insensitive)
+        const exists = todos.some(t =>
+            t.text.toLowerCase().trim() === taskText.toLowerCase().trim()
+        );
+
+        if (!exists) {
+            todos.push({
+                text: taskText,
+                completed: false,
+                archived: false
+            });
+            addedCount++;
+        }
+    });
+
+    if (addedCount > 0) {
+        saveTodos();
+        renderTodos();
+
+        // Show success message
+        const message = addedCount === 1
+            ? '✓ Added 1 task to your to-do list!'
+            : `✓ Added ${addedCount} tasks to your to-do list!`;
+
+        showButtonFeedback(elements.addSelectedTasksBtn, message);
+
+        // Close modal after a short delay
+        setTimeout(() => {
+            elements.aiSuggestionsModal.hidden = true;
+
+            // Expand todo sidebar if collapsed (on desktop)
+            if (window.innerWidth > 768 && elements.todoSidebar.classList.contains('collapsed')) {
+                expandTodoSidebar();
+            }
+            // Scroll to todo list on mobile
+            if (window.innerWidth <= 768) {
+                elements.sidebar.classList.add('active');
+            }
+        }, 1000);
+
+    } else {
+        alert('No tasks selected or all selected tasks are already in your list.');
     }
 }
 
@@ -1303,6 +1489,14 @@ async function suggestTasks() {
  * Initialize the app
  */
 function init() {
+    // Check if running locally
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Show AI button ONLY on localhost
+    if (isLocalhost && elements.suggestTasksBtn) {
+        elements.suggestTasksBtn.style.display = 'flex';
+        console.log('✨ AI Feature enabled for local development');
+    }
 
     // Load today's entry
     loadTodayEntry();
@@ -1349,6 +1543,25 @@ function init() {
         renderEntriesList(e.target.value);
     });
     elements.suggestTasksBtn.addEventListener('click', suggestTasks);
+
+    if (elements.addSelectedTasksBtn) {
+        elements.addSelectedTasksBtn.addEventListener('click', addSelectedTasks);
+    }
+
+    if (elements.closeAiModal) {
+        elements.closeAiModal.addEventListener('click', () => {
+            elements.aiSuggestionsModal.hidden = true;
+        });
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+        if (elements.aiSuggestionsModal && !elements.aiSuggestionsModal.hidden &&
+            !elements.aiSuggestionsModal.contains(e.target) &&
+            !elements.suggestTasksBtn.contains(e.target)) {
+            elements.aiSuggestionsModal.hidden = true;
+        }
+    });
 
     // Calendar event delegation
     elements.calendarGrid.addEventListener('click', handleCalendarClick);
