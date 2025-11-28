@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         // Initialize Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-pro", // Switched to stable model
             generationConfig: {
                 temperature: 0.3, // Lower temperature for more focused output
                 maxOutputTokens: 500,
