@@ -63,7 +63,10 @@ const elements = {
     archivedList: document.getElementById('archivedList'),
     welcomeModal: document.getElementById('welcomeModal'),
     welcomeCloseBtn: document.getElementById('welcomeCloseBtn'),
-    entrySearchInput: document.getElementById('entrySearchInput')
+    entrySearchInput: document.getElementById('entrySearchInput'),
+    suggestTasksBtn: document.getElementById('suggestTasksBtn'),
+    suggestTasksIcon: document.getElementById('suggestTasksIcon'),
+    suggestTasksText: document.getElementById('suggestTasksText')
 };
 
 // === Utility Functions ===
@@ -1194,6 +1197,108 @@ function closeWelcomeModal() {
 }
 
 /**
+ * Suggest tasks using AI based on journal content
+ */
+async function suggestTasks() {
+    const content = elements.journalTextarea.value.trim();
+
+    // Validate content
+    if (!content || content.length < 20) {
+        alert('Please write at least a few sentences in your journal before suggesting tasks.');
+        return;
+    }
+
+    // Set loading state
+    elements.suggestTasksBtn.disabled = true;
+    elements.suggestTasksBtn.classList.add('loading');
+    elements.suggestTasksText.textContent = 'Analyzing...';
+
+    try {
+        // Call the API
+        const response = await fetch('/api/suggest-tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to generate suggestions');
+        }
+
+        const { tasks } = data;
+
+        // Handle empty results
+        if (!tasks || tasks.length === 0) {
+            alert('No actionable tasks found in your journal entry. Try writing about specific things you need to do!');
+            return;
+        }
+
+        // Add tasks to the todo list
+        let addedCount = 0;
+        tasks.forEach(taskText => {
+            // Check if task already exists (case-insensitive)
+            const exists = todos.some(t =>
+                t.text.toLowerCase().trim() === taskText.toLowerCase().trim()
+            );
+
+            if (!exists) {
+                todos.push({
+                    text: taskText,
+                    completed: false,
+                    archived: false
+                });
+                addedCount++;
+            }
+        });
+
+        // Save and render
+        if (addedCount > 0) {
+            saveTodos();
+            renderTodos();
+
+            // Show success message
+            const message = addedCount === 1
+                ? '✓ Added 1 task to your to-do list!'
+                : `✓ Added ${addedCount} tasks to your to-do list!`;
+
+            showButtonFeedback(elements.suggestTasksBtn, message);
+
+            // Expand todo sidebar if collapsed (on desktop)
+            if (window.innerWidth > 768 && elements.todoSidebar.classList.contains('collapsed')) {
+                expandTodoSidebar();
+            }
+        } else {
+            alert('All suggested tasks are already in your to-do list!');
+        }
+
+    } catch (error) {
+        console.error('Error suggesting tasks:', error);
+
+        // Show more specific error message
+        let errorMessage = 'Failed to generate task suggestions. ';
+
+        if (error.message.includes('AI service not configured')) {
+            errorMessage += 'The AI service is not set up yet. Please add your GEMINI_API_KEY to Vercel environment variables.';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage += 'Could not connect to the API. Make sure you\'ve deployed to Vercel.';
+        } else {
+            errorMessage += error.message || 'Please try again later.';
+        }
+
+        alert(errorMessage);
+    } finally {
+        // Reset button state
+        elements.suggestTasksBtn.disabled = false;
+        elements.suggestTasksBtn.classList.remove('loading');
+        elements.suggestTasksText.textContent = 'Suggest Tasks';
+    }
+}
+
+/**
  * Initialize the app
  */
 function init() {
@@ -1242,6 +1347,7 @@ function init() {
     elements.entrySearchInput.addEventListener('input', (e) => {
         renderEntriesList(e.target.value);
     });
+    elements.suggestTasksBtn.addEventListener('click', suggestTasks);
 
     // Calendar event delegation
     elements.calendarGrid.addEventListener('click', handleCalendarClick);
