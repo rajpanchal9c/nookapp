@@ -1,14 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Try to import local config for development
-let localConfig = null;
-try {
-    const configModule = await import('./config.local.js');
-    localConfig = configModule.config;
-} catch (e) {
-    // Local config doesn't exist, will use environment variable
-}
-
 export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
@@ -23,8 +14,8 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Journal content is required' });
         }
 
-        // Get API key from local config or environment variable
-        const apiKey = localConfig?.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+        // Get API key from environment variable
+        const apiKey = process.env.GEMINI_API_KEY;
 
         // Check for API key
         if (!apiKey) {
