@@ -160,13 +160,8 @@
           aria-label="Journal entry" autofocus></textarea>
       </div>
 
-      <!-- AI Actions -->
-      <div class="journal-footer-actions">
-        <button id="suggestTasksBtn" class="btn-ai-float" aria-label="Suggest tasks from entry">
-          <span class="ai-icon">✨</span>
-          <span class="ai-text">Suggest Tasks</span>
-        </button>
-      </div>
+      <!-- AI Actions (Injected dynamically in dev mode) -->
+      <div id="aiActionsContainer" class="journal-footer-actions"></div>
 
       <!-- AI Suggestions Modal (Hidden by default) -->
       <div id="aiSuggestionsModal" class="ai-suggestions-modal" hidden>
@@ -296,7 +291,7 @@
   </div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=62"></script>
+  <script src="app.js?v=63"></script>
 </body>
 
 </html>

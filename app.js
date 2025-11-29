@@ -64,13 +64,11 @@ const elements = {
     welcomeModal: document.getElementById('welcomeModal'),
     welcomeCloseBtn: document.getElementById('welcomeCloseBtn'),
     entrySearchInput: document.getElementById('entrySearchInput'),
-    suggestTasksBtn: document.getElementById('suggestTasksBtn'),
-    suggestTasksIcon: document.getElementById('suggestTasksIcon'),
-    suggestTasksText: document.getElementById('suggestTasksText'),
     aiSuggestionsModal: document.getElementById('aiSuggestionsModal'),
     aiSuggestionsList: document.getElementById('aiSuggestionsList'),
     addSelectedTasksBtn: document.getElementById('addSelectedTasksBtn'),
     closeAiModal: document.getElementById('closeAiModal'),
+    aiActionsContainer: document.getElementById('aiActionsContainer'),
 };
 
 // === Utility Functions ===
@@ -1492,10 +1490,26 @@ function init() {
     // Check if running locally
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-    // Show AI button ONLY on localhost
-    if (isLocalhost && elements.suggestTasksBtn) {
-        elements.suggestTasksBtn.style.display = 'flex';
+    // Inject AI button ONLY on localhost
+    if (isLocalhost && elements.aiActionsContainer) {
+        elements.aiActionsContainer.innerHTML = `
+            <button id="suggestTasksBtn" class="btn-ai-float" aria-label="Suggest tasks from entry" style="display: flex;">
+                <span id="suggestTasksIcon" class="ai-icon">✨</span>
+                <span id="suggestTasksText" class="ai-text">Suggest Tasks</span>
+            </button>
+        `;
+
+        // Update elements object with new references
+        elements.suggestTasksBtn = document.getElementById('suggestTasksBtn');
+        elements.suggestTasksIcon = document.getElementById('suggestTasksIcon');
+        elements.suggestTasksText = document.getElementById('suggestTasksText');
+
         console.log('✨ AI Feature enabled for local development');
+
+        // Attach listener
+        if (elements.suggestTasksBtn) {
+            elements.suggestTasksBtn.addEventListener('click', suggestTasks);
+        }
     }
 
     // Load today's entry
@@ -1542,7 +1556,6 @@ function init() {
     elements.entrySearchInput.addEventListener('input', (e) => {
         renderEntriesList(e.target.value);
     });
-    elements.suggestTasksBtn.addEventListener('click', suggestTasks);
 
     if (elements.addSelectedTasksBtn) {
         elements.addSelectedTasksBtn.addEventListener('click', addSelectedTasks);
@@ -1558,7 +1571,7 @@ function init() {
     document.addEventListener('click', (e) => {
         if (elements.aiSuggestionsModal && !elements.aiSuggestionsModal.hidden &&
             !elements.aiSuggestionsModal.contains(e.target) &&
-            !elements.suggestTasksBtn.contains(e.target)) {
+            elements.suggestTasksBtn && !elements.suggestTasksBtn.contains(e.target)) {
             elements.aiSuggestionsModal.hidden = true;
         }
     });
