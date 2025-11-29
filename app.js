@@ -64,11 +64,14 @@ const elements = {
     welcomeModal: document.getElementById('welcomeModal'),
     welcomeCloseBtn: document.getElementById('welcomeCloseBtn'),
     entrySearchInput: document.getElementById('entrySearchInput'),
-    aiSuggestionsModal: document.getElementById('aiSuggestionsModal'),
-    aiSuggestionsList: document.getElementById('aiSuggestionsList'),
-    addSelectedTasksBtn: document.getElementById('addSelectedTasksBtn'),
-    closeAiModal: document.getElementById('closeAiModal'),
     aiActionsContainer: document.getElementById('aiActionsContainer'),
+    aiModalContainer: document.getElementById('aiModalContainer'),
+    // AI elements will be populated dynamically if on localhost
+    suggestTasksBtn: null,
+    aiSuggestionsModal: null,
+    aiSuggestionsList: null,
+    addSelectedTasksBtn: null,
+    closeAiModal: null,
 };
 
 // === Utility Functions ===
@@ -1490,26 +1493,70 @@ function init() {
     // Check if running locally
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-    // Inject AI button ONLY on localhost
-    if (isLocalhost && elements.aiActionsContainer) {
-        elements.aiActionsContainer.innerHTML = `
-            <button id="suggestTasksBtn" class="btn-ai-float" aria-label="Suggest tasks from entry" style="display: flex;">
-                <span id="suggestTasksIcon" class="ai-icon">✨</span>
-                <span id="suggestTasksText" class="ai-text">Suggest Tasks</span>
-            </button>
-        `;
-
-        // Update elements object with new references
-        elements.suggestTasksBtn = document.getElementById('suggestTasksBtn');
-        elements.suggestTasksIcon = document.getElementById('suggestTasksIcon');
-        elements.suggestTasksText = document.getElementById('suggestTasksText');
-
+    // Inject AI features ONLY on localhost
+    if (isLocalhost) {
         console.log('✨ AI Feature enabled for local development');
 
-        // Attach listener
+        // 1. Inject Button
+        if (elements.aiActionsContainer) {
+            elements.aiActionsContainer.innerHTML = `
+                <button id="suggestTasksBtn" class="btn-ai-float" aria-label="Suggest tasks from entry" style="display: flex;">
+                    <span id="suggestTasksIcon" class="ai-icon">✨</span>
+                    <span id="suggestTasksText" class="ai-text">Suggest Tasks</span>
+                </button>
+            `;
+        }
+
+        // 2. Inject Modal
+        if (elements.aiModalContainer) {
+            elements.aiModalContainer.innerHTML = `
+                <div id="aiSuggestionsModal" class="ai-suggestions-modal" hidden>
+                    <div class="ai-suggestions-header">
+                        <h3>Suggested Tasks</h3>
+                        <button id="closeAiModal" class="btn-icon-only" aria-label="Close suggestions">✕</button>
+                    </div>
+                    <div class="ai-privacy-notice">
+                        <span class="lock-icon">🔒</span>
+                        Your text is only used to generate these suggestions and is not used to train external models.
+                    </div>
+                    <div id="aiSuggestionsList" class="ai-suggestions-list"></div>
+                    <div class="ai-suggestions-actions">
+                        <button id="addSelectedTasksBtn" class="btn-primary">Add Selected</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. Update elements object with new references
+        elements.suggestTasksBtn = document.getElementById('suggestTasksBtn');
+        elements.aiSuggestionsModal = document.getElementById('aiSuggestionsModal');
+        elements.aiSuggestionsList = document.getElementById('aiSuggestionsList');
+        elements.addSelectedTasksBtn = document.getElementById('addSelectedTasksBtn');
+        elements.closeAiModal = document.getElementById('closeAiModal');
+
+        // 4. Attach Listeners (Safe checks)
         if (elements.suggestTasksBtn) {
             elements.suggestTasksBtn.addEventListener('click', suggestTasks);
         }
+
+        if (elements.addSelectedTasksBtn) {
+            elements.addSelectedTasksBtn.addEventListener('click', addSelectedTasks);
+        }
+
+        if (elements.closeAiModal) {
+            elements.closeAiModal.addEventListener('click', () => {
+                if (elements.aiSuggestionsModal) elements.aiSuggestionsModal.hidden = true;
+            });
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            if (elements.aiSuggestionsModal && !elements.aiSuggestionsModal.hidden &&
+                !elements.aiSuggestionsModal.contains(e.target) &&
+                elements.suggestTasksBtn && !elements.suggestTasksBtn.contains(e.target)) {
+                elements.aiSuggestionsModal.hidden = true;
+            }
+        });
     }
 
     // Load today's entry
@@ -1532,67 +1579,50 @@ function init() {
     showWelcomeModal();
 
     // Event listeners
-    elements.journalTextarea.addEventListener('input', handleJournalInput);
-    elements.moodOptions.addEventListener('click', handleMoodSelection);
-    elements.submitBtn.addEventListener('click', handleSubmit);
-    elements.settingsBtn.addEventListener('click', () => toggleSettings(true));
-    elements.closeSettingsBtn.addEventListener('click', () => toggleSettings(false));
-    elements.closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
-    elements.collapseSidebarBtn.addEventListener('click', collapseSidebar);
-    elements.expandSidebarBtn.addEventListener('click', expandSidebar);
-    elements.overlay.addEventListener('click', handleOverlayClick);
-    elements.exportBtn.addEventListener('click', exportEntries);
-    elements.importBtn.addEventListener('click', () => elements.importFile.click());
-    elements.importFile.addEventListener('change', importEntries);
-    elements.prevMonthBtn.addEventListener('click', prevMonth);
-    elements.nextMonthBtn.addEventListener('click', nextMonth);
-    elements.collapseTodoBtn.addEventListener('click', collapseTodoSidebar);
-    elements.expandTodoBtn.addEventListener('click', expandTodoSidebar);
-    elements.viewArchivedBtn.addEventListener('click', showArchivedView);
-    elements.backFromArchivedBtn.addEventListener('click', showTodoView);
-    elements.deleteAllArchivedBtn.addEventListener('click', deleteAllArchived);
-    elements.archivedSearchInput.addEventListener('input', handleArchivedSearch);
-    elements.welcomeCloseBtn.addEventListener('click', closeWelcomeModal);
-    elements.entrySearchInput.addEventListener('input', (e) => {
-        renderEntriesList(e.target.value);
-    });
-
-    if (elements.addSelectedTasksBtn) {
-        elements.addSelectedTasksBtn.addEventListener('click', addSelectedTasks);
-    }
-
-    if (elements.closeAiModal) {
-        elements.closeAiModal.addEventListener('click', () => {
-            elements.aiSuggestionsModal.hidden = true;
+    if (elements.journalTextarea) elements.journalTextarea.addEventListener('input', handleJournalInput);
+    if (elements.moodOptions) elements.moodOptions.addEventListener('click', handleMoodSelection);
+    if (elements.submitBtn) elements.submitBtn.addEventListener('click', handleSubmit);
+    if (elements.settingsBtn) elements.settingsBtn.addEventListener('click', () => toggleSettings(true));
+    if (elements.closeSettingsBtn) elements.closeSettingsBtn.addEventListener('click', () => toggleSettings(false));
+    if (elements.closeSidebarBtn) elements.closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
+    if (elements.collapseSidebarBtn) elements.collapseSidebarBtn.addEventListener('click', collapseSidebar);
+    if (elements.expandSidebarBtn) elements.expandSidebarBtn.addEventListener('click', expandSidebar);
+    if (elements.overlay) elements.overlay.addEventListener('click', handleOverlayClick);
+    if (elements.exportBtn) elements.exportBtn.addEventListener('click', exportEntries);
+    if (elements.importBtn) elements.importBtn.addEventListener('click', () => elements.importFile.click());
+    if (elements.importFile) elements.importFile.addEventListener('change', importEntries);
+    if (elements.prevMonthBtn) elements.prevMonthBtn.addEventListener('click', prevMonth);
+    if (elements.nextMonthBtn) elements.nextMonthBtn.addEventListener('click', nextMonth);
+    if (elements.collapseTodoBtn) elements.collapseTodoBtn.addEventListener('click', collapseTodoSidebar);
+    if (elements.expandTodoBtn) elements.expandTodoBtn.addEventListener('click', expandTodoSidebar);
+    if (elements.viewArchivedBtn) elements.viewArchivedBtn.addEventListener('click', showArchivedView);
+    if (elements.backFromArchivedBtn) elements.backFromArchivedBtn.addEventListener('click', showTodoView);
+    if (elements.deleteAllArchivedBtn) elements.deleteAllArchivedBtn.addEventListener('click', deleteAllArchived);
+    if (elements.archivedSearchInput) elements.archivedSearchInput.addEventListener('input', handleArchivedSearch);
+    if (elements.welcomeCloseBtn) elements.welcomeCloseBtn.addEventListener('click', closeWelcomeModal);
+    if (elements.entrySearchInput) {
+        elements.entrySearchInput.addEventListener('input', (e) => {
+            renderEntriesList(e.target.value);
         });
     }
 
-    // Close modal when clicking outside
-    document.addEventListener('click', (e) => {
-        if (elements.aiSuggestionsModal && !elements.aiSuggestionsModal.hidden &&
-            !elements.aiSuggestionsModal.contains(e.target) &&
-            elements.suggestTasksBtn && !elements.suggestTasksBtn.contains(e.target)) {
-            elements.aiSuggestionsModal.hidden = true;
-        }
-    });
-
     // Calendar event delegation
-    elements.calendarGrid.addEventListener('click', handleCalendarClick);
+    if (elements.calendarGrid) elements.calendarGrid.addEventListener('click', handleCalendarClick);
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (event) => {
         // Escape to close panels
         if (event.key === 'Escape') {
-            if (elements.settingsPanel.classList.contains('open')) {
+            if (elements.settingsPanel && elements.settingsPanel.classList.contains('open')) {
                 toggleSettings(false);
-            } else if (elements.entriesSidebar.classList.contains('open')) {
+            } else if (elements.entriesSidebar && elements.entriesSidebar.classList.contains('open')) {
                 toggleSidebar(false);
             }
         }
     });
 
     // Auto-focus textarea on load
-    elements.journalTextarea.focus();
+    if (elements.journalTextarea) elements.journalTextarea.focus();
 
     console.log('Nook initialized ✨');
 }

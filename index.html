@@ -163,23 +163,8 @@
       <!-- AI Actions (Injected dynamically in dev mode) -->
       <div id="aiActionsContainer" class="journal-footer-actions"></div>
 
-      <!-- AI Suggestions Modal (Hidden by default) -->
-      <div id="aiSuggestionsModal" class="ai-suggestions-modal" hidden>
-        <div class="ai-suggestions-header">
-          <h3>Suggested Tasks</h3>
-          <button id="closeAiModal" class="btn-icon-only" aria-label="Close suggestions">✕</button>
-        </div>
-        <div class="ai-privacy-notice">
-          <span class="lock-icon">🔒</span>
-          Your text is only used to generate these suggestions and is not used to train external models.
-        </div>
-        <div id="aiSuggestionsList" class="ai-suggestions-list">
-          <!-- Tasks will be injected here -->
-        </div>
-        <div class="ai-suggestions-actions">
-          <button id="addSelectedTasksBtn" class="btn-primary">Add Selected</button>
-        </div>
-      </div>
+      <!-- AI Suggestions Modal (Injected dynamically in dev mode) -->
+      <div id="aiModalContainer"></div>
 
       <div class="journal-footer">
         <span class="character-count" id="characterCount">0 characters</span>
@@ -291,7 +276,7 @@
   </div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=63"></script>
+  <script src="app.js?v=64"></script>
 </body>
 
 </html>
