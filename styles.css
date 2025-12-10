@@ -329,13 +329,16 @@ button,
 }
 
 /* Floating AI Button */
+/* Floating AI Button */
 .btn-ai-float {
   position: absolute;
   bottom: 13px;
-  /* 12px + 1px border */
   right: 13px;
-  /* 12px + 1px border */
-  width: 40px;
+  /* Use max-width for smooth transition instead of width: auto */
+  width: auto;
+  min-width: 40px;
+  /* Ensure strictly circular shape in idle state */
+  max-width: 40px;
   height: 40px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-accent-peach), var(--color-accent-lavender));
@@ -345,16 +348,40 @@ button,
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-  transition: all 0.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* Smoother, calmer transitions: 800ms */
+  transition: max-width 800ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    padding 800ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-radius 800ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 800ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 800ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    background 800ms cubic-bezier(0.22, 0.61, 0.36, 1);
   overflow: hidden;
   z-index: 5;
   padding: 0;
   pointer-events: auto;
+  /* Idle micro-glow pulse */
+  animation: pulse-glow 15s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  90% {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  95% {
+    box-shadow: 0 2px 12px rgba(196, 181, 253, 0.4);
+  }
+
+  100% {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
 }
 
 .btn-ai-float .ai-icon {
   font-size: 18px;
-  transition: all 0.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1);
   flex-shrink: 0;
 }
 
@@ -366,45 +393,59 @@ button,
   opacity: 0;
   width: 0;
   margin-left: 0;
-  transition: opacity 0.7s cubic-bezier(0.25, 0.8, 0.25, 1) 0.15s,
-    width 0.7s cubic-bezier(0.25, 0.8, 0.25, 1),
-    margin-left 0.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* Base state (Exit): Fast fade out immediately prevents clipping */
+  transition: opacity 100ms ease-out,
+    width 800ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    margin-left 800ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* Hover State - Expand */
+/* Hover State */
 .btn-ai-float:hover {
-  width: auto;
+  max-width: 200px;
+  /* Ample space for text */
   padding: 0 var(--space-4);
   border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-  transform: translateY(-1px) scale(1.02);
+  /* Slight deepen of shadow, small scale up */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.015);
+  filter: brightness(1.02);
 }
 
 .btn-ai-float:hover .ai-text {
   opacity: 1;
   width: auto;
   margin-left: var(--space-2);
+  /* Hover state (Enter): Delayed fade in allows expansion first */
+  transition: opacity 300ms ease-out 150ms,
+    width 800ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    margin-left 800ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 /* Active/Click State */
 .btn-ai-float:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.15s ease;
+  /* Gentle press scale */
+  transform: scale(0.985);
+  filter: brightness(0.95);
+  /* Easing back happens via the main transition */
+  transition-duration: 180ms;
 }
 
 /* Disabled State */
 .btn-ai-float:disabled {
-  opacity: 0.5;
+  opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+  filter: grayscale(0.2);
+  animation: none;
 }
 
 .btn-ai-float:disabled:hover {
+  /* Prevent expansion on hover when disabled/loading */
   width: 40px;
   padding: 0;
   border-radius: 50%;
   transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .btn-ai-float:disabled:hover .ai-text {
@@ -414,8 +455,32 @@ button,
 }
 
 /* Loading State */
+.btn-ai-float.loading {
+  /* Keep circle shape */
+  width: 40px;
+  padding: 0;
+  border-radius: 50%;
+  /* Gentle shimmer gradient */
+  background: linear-gradient(135deg,
+      var(--color-accent-peach),
+      var(--color-accent-lavender),
+      var(--color-accent-peach));
+  background-size: 200% 200%;
+  animation: gradient-shimmer 3s ease infinite;
+}
+
 .btn-ai-float.loading .ai-icon {
-  animation: spin 1s linear infinite;
+  animation: spin 1.5s linear infinite;
+  opacity: 0.8;
+}
+
+.btn-ai-float.loading .ai-text {
+  /* Hide text during loading to keep it a simple spinner circle,
+     OR expand if we want "Reflecting..." text.
+     User asked for: "Keep same size/position... tiny spinner".
+     So we keep it compact. 
+  */
+  display: none;
 }
 
 @keyframes spin {
@@ -425,6 +490,20 @@ button,
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes gradient-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
   }
 }
 
@@ -1774,6 +1853,7 @@ button,
     gap: var(--space-2);
   }
 }
+
 /* === AI Insights Panel === */
 .insights-panel {
   background: var(--color-bg-surface);
