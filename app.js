@@ -23,6 +23,11 @@ let autoSaveTimeout = null;
 // Todo state
 let todos = [];
 
+// Insights state
+let currentInsights = null;
+let insightsEntryText = ''; // Track original entry text when insights generated
+let selectedTaskIndices = new Set(); // Track which tasks are selected
+
 // === DOM Elements ===
 const elements = {
     dateIndicator: document.getElementById('dateIndicator'),
@@ -64,9 +69,10 @@ const elements = {
     welcomeModal: document.getElementById('welcomeModal'),
     welcomeCloseBtn: document.getElementById('welcomeCloseBtn'),
     entrySearchInput: document.getElementById('entrySearchInput'),
-    suggestTasksBtn: document.getElementById('suggestTasksBtn'),
-    suggestTasksIcon: document.getElementById('suggestTasksIcon'),
-    suggestTasksText: document.getElementById('suggestTasksText')
+    reflectBtn: document.getElementById('reflectBtn'),
+    reflectIcon: document.getElementById('reflectIcon'),
+    reflectText: document.getElementById('reflectText'),
+    insightsPanel: document.getElementById('insightsPanel')
 };
 
 // === Utility Functions ===
@@ -1196,108 +1202,305 @@ function closeWelcomeModal() {
     localStorage.setItem('hasVisited', 'true');
 }
 
+// === AI Insights Functions ===
+
 /**
- * Suggest tasks using AI based on journal content
+ * Generate insights using AI based on journal content
  */
-async function suggestTasks() {
-    const content = elements.journalTextarea.value.trim();
+async function generateInsights() {
+    const entryText = elements.journalTextarea.value.trim();
 
     // Validate content
-    if (!content || content.length < 20) {
-        alert('Please write at least a few sentences in your journal before suggesting tasks.');
+    if (!entryText || entryText.length < 20) {
+        alert('Please write at least a few sentences in your journal before requesting insights.');
         return;
     }
 
     // Set loading state
-    elements.suggestTasksBtn.disabled = true;
-    elements.suggestTasksBtn.classList.add('loading');
-    elements.suggestTasksText.textContent = 'Analyzing...';
+    elements.reflectBtn.disabled = true;
+    elements.reflectBtn.classList.add('loading');
+    elements.reflectText.textContent = 'Nook is reflecting on your entry...';
 
     try {
-        // Call the API
-        const response = await fetch('/api/suggest-tasks', {
+        // Call the insights API
+        const response = await fetch('/api/insights', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ content })
+            body: JSON.stringify({
+                entryText,
+                mood: currentEntry.mood
+            })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            // Use the detailed message from the server if available
-            throw new Error(data.message || data.error || 'Failed to generate suggestions');
+            throw new Error(data.message || data.error || 'Failed to generate insights');
         }
 
-        const { tasks } = data;
+        // Store insights and original entry text
+        currentInsights = data;
+        insightsEntryText = entryText;
+        selectedTaskIndices.clear();
 
-        // Handle empty results
-        if (!tasks || tasks.length === 0) {
-            alert('No actionable tasks found in your journal entry. Try writing about specific things you need to do!');
-            return;
-        }
-
-        // Add tasks to the todo list
-        let addedCount = 0;
-        tasks.forEach(taskText => {
-            // Check if task already exists (case-insensitive)
-            const exists = todos.some(t =>
-                t.text.toLowerCase().trim() === taskText.toLowerCase().trim()
-            );
-
-            if (!exists) {
-                todos.push({
-                    text: taskText,
-                    completed: false,
-                    archived: false
-                });
-                addedCount++;
-            }
-        });
-
-        // Save and render
-        if (addedCount > 0) {
-            saveTodos();
-            renderTodos();
-
-            // Show success message
-            const message = addedCount === 1
-                ? '✓ Added 1 task to your to-do list!'
-                : `✓ Added ${addedCount} tasks to your to-do list!`;
-
-            showButtonFeedback(elements.suggestTasksBtn, message);
-
-            // Expand todo sidebar if collapsed (on desktop)
-            if (window.innerWidth > 768 && elements.todoSidebar.classList.contains('collapsed')) {
-                expandTodoSidebar();
-            }
-        } else {
-            alert('All suggested tasks are already in your to-do list!');
-        }
+        // Render the insights panel
+        renderInsightsPanel();
 
     } catch (error) {
-        console.error('Error suggesting tasks:', error);
+        console.error('Error generating insights:', error);
 
-        // Show more specific error message
-        let errorMessage = 'Failed to generate task suggestions. ';
+        // Show error state
+        let errorMessage = 'Something went wrong while reflecting on your entry. ';
 
         if (error.message.includes('AI service not configured')) {
-            errorMessage += 'The AI service is not set up yet. Please add your GEMINI_API_KEY to Vercel environment variables.';
+            errorMessage += 'The AI service is not set up yet.';
         } else if (error.message.includes('Failed to fetch')) {
-            errorMessage += 'Could not connect to the API. Make sure you\'ve deployed to Vercel.';
+            errorMessage += 'Could not connect to the API.';
         } else {
-            errorMessage += error.message || 'Please try again later.';
+            errorMessage += 'Please try again later.';
         }
 
         alert(errorMessage);
     } finally {
         // Reset button state
-        elements.suggestTasksBtn.disabled = false;
-        elements.suggestTasksBtn.classList.remove('loading');
-        elements.suggestTasksText.textContent = 'Suggest Tasks';
+        elements.reflectBtn.disabled = false;
+        elements.reflectBtn.classList.remove('loading');
+        elements.reflectText.textContent = 'Reflect with Nook';
     }
 }
+
+/**
+ * Render the insights panel with reflection and tasks
+ */
+function renderInsightsPanel() {
+    if (!currentInsights) {
+        elements.insightsPanel.style.display = 'none';
+        return;
+    }
+
+    const { reflection, tasks } = currentInsights;
+    const currentText = elements.journalTextarea.value.trim();
+    const isStale = currentText !== insightsEntryText && currentText.length > 0;
+
+    let html = `
+        <div class="insights-header">
+            <h3 class="insights-title">Insights from today</h3>
+            <button class="insights-close" onclick="closeInsights()" aria-label="Close insights">×</button>
+        </div>
+    `;
+
+    // Stale warning
+    if (isStale) {
+        html += `
+            <div class="insights-stale">
+                You've edited your entry since generating these insights.
+                <button class="insights-refresh" onclick="generateInsights()">Refresh insights</button>
+            </div>
+        `;
+    }
+
+    // Reflection section
+    html += `
+        <div class="insights-reflection">
+            <p class="insights-reflection-label">Nook's gentle reflection</p>
+            <p class="insights-reflection-text">${escapeHtml(reflection)}</p>
+        </div>
+    `;
+
+    // Tasks section
+    html += `<div class="insights-tasks">`;
+    html += `<h4 class="insights-tasks-title">Suggested Tasks</h4>`;
+
+    if (!tasks || tasks.length === 0) {
+        html += `
+            <p class="insights-empty-tasks">
+                No clear tasks popped up today—that's okay. Not every day needs action.
+            </p>
+        `;
+    } else {
+        html += `<div class="insights-tasks-list">`;
+        tasks.forEach((task, index) => {
+            const isSelected = selectedTaskIndices.has(index);
+
+            // Check if task already exists in to-do list
+            const alreadyExists = todos.some(t =>
+                t.text.toLowerCase().trim() === task.toLowerCase().trim() && !t.archived
+            );
+
+            html += `
+                <label class="insights-task-item ${alreadyExists ? 'already-added' : ''}">
+                    <input 
+                        type="checkbox" 
+                        class="insights-task-checkbox" 
+                        data-index="${index}"
+                        ${isSelected ? 'checked' : ''}
+                        ${alreadyExists ? 'disabled' : ''}
+                        onchange="toggleTaskSelection(${index})"
+                    >
+                    <span class="insights-task-text">${escapeHtml(task)}</span>
+                    ${alreadyExists ? '<span class="task-added-badge">✓ Already added</span>' : ''}
+                </label>
+            `;
+        });
+        html += `</div>`;
+
+        // Action buttons
+        html += `
+            <div class="insights-actions">
+                <button 
+                    class="btn btn-secondary insights-btn-add-selected" 
+                    onclick="addSelectedTasks()"
+                    ${selectedTaskIndices.size === 0 ? 'disabled' : ''}
+                >
+                    Add selected to tasks (${selectedTaskIndices.size})
+                </button>
+                <button class="btn btn-primary insights-btn-add-all" onclick="addAllTasks()">
+                    Add all to tasks
+                </button>
+            </div>
+        `;
+    }
+
+    html += `</div>`; // close insights-tasks
+
+    // Privacy notice
+    html += `
+        <p class="insights-privacy">
+            Your entry is analyzed only to generate these insights and suggested tasks.
+        </p>
+    `;
+
+    elements.insightsPanel.innerHTML = html;
+    elements.insightsPanel.style.display = 'block';
+
+    // Scroll insights into view smoothly
+    setTimeout(() => {
+        elements.insightsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+/**
+ * Toggle task selection
+ */
+function toggleTaskSelection(index) {
+    if (selectedTaskIndices.has(index)) {
+        selectedTaskIndices.delete(index);
+    } else {
+        selectedTaskIndices.add(index);
+    }
+    renderInsightsPanel(); // Re-render to update button state
+}
+
+/**
+ * Add selected tasks to the to-do list
+ */
+function addSelectedTasks() {
+    if (!currentInsights || selectedTaskIndices.size === 0) return;
+
+    const tasksToAdd = Array.from(selectedTaskIndices)
+        .map(index => currentInsights.tasks[index])
+        .filter(task => task);
+
+    addTasksToList(tasksToAdd);
+}
+
+/**
+ * Add all suggested tasks to the to-do list
+ */
+function addAllTasks() {
+    if (!currentInsights || !currentInsights.tasks || currentInsights.tasks.length === 0) return;
+
+    addTasksToList(currentInsights.tasks);
+}
+
+/**
+ * Add tasks to the to-do list (helper function)
+ */
+function addTasksToList(tasks) {
+    let addedCount = 0;
+
+    tasks.forEach(taskText => {
+        // Check if task already exists (case-insensitive)
+        const exists = todos.some(t =>
+            t.text.toLowerCase().trim() === taskText.toLowerCase().trim()
+        );
+
+        if (!exists) {
+            todos.push({
+                text: taskText,
+                completed: false,
+                archived: false
+            });
+            addedCount++;
+        }
+    });
+
+    // Save and render
+    if (addedCount > 0) {
+        saveTodos();
+        renderTodos();
+
+        // Show success feedback
+        const message = addedCount === 1
+            ? 'Added 1 task to your list'
+            : `Added ${addedCount} tasks to your list`;
+
+        showToast(message);
+
+        // Clear selection
+        selectedTaskIndices.clear();
+        renderInsightsPanel();
+
+        // Expand todo sidebar if collapsed (on desktop)
+        if (window.innerWidth > 768 && elements.todoSidebar.classList.contains('collapsed')) {
+            expandTodoSidebar();
+        }
+    } else {
+        showToast('All tasks are already in your list');
+    }
+}
+
+/**
+ * Close insights panel
+ */
+function closeInsights() {
+    elements.insightsPanel.style.display = 'none';
+    currentInsights = null;
+    insightsEntryText = '';
+    selectedTaskIndices.clear();
+}
+
+/**
+ * Show a toast notification
+ */
+function showToast(message) {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 
 /**
  * Initialize the app
@@ -1348,7 +1551,8 @@ function init() {
     elements.entrySearchInput.addEventListener('input', (e) => {
         renderEntriesList(e.target.value);
     });
-    elements.suggestTasksBtn.addEventListener('click', suggestTasks);
+    // AI Insights
+    elements.reflectBtn.addEventListener('click', generateInsights);
 
     // Calendar event delegation
     elements.calendarGrid.addEventListener('click', handleCalendarClick);

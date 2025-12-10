@@ -160,11 +160,14 @@
           aria-label="Journal entry" autofocus></textarea>
 
         <!-- Floating AI Button -->
-        <button class="btn-ai-float" id="suggestTasksBtn" title="Suggest tasks from your journal">
-          <span class="ai-icon" id="suggestTasksIcon">✨</span>
-          <span class="ai-text" id="suggestTasksText">Suggest Tasks</span>
+        <button class="btn-ai-float" id="reflectBtn" title="Reflect on your journal with Nook">
+          <span class="ai-icon" id="reflectIcon">✨</span>
+          <span class="ai-text" id="reflectText">Reflect with Nook</span>
         </button>
       </div>
+
+      <!-- Insights Panel (populated by JavaScript) -->
+      <div id="insightsPanel" class="insights-panel" style="display: none;"></div>
 
       <div class="journal-footer">
         <span class="character-count" id="characterCount">0 characters</span>

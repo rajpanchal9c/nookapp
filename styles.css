@@ -1774,3 +1774,251 @@ button,
     gap: var(--space-2);
   }
 }
+/* === AI Insights Panel === */
+.insights-panel {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-top: var(--space-5);
+  box-shadow: var(--shadow-md);
+  animation: fadeInUp var(--duration-normal) var(--ease-smooth);
+}
+
+.insights-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.insights-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.insights-close {
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--space-2);
+  transition: all var(--duration-fast) var(--ease-smooth);
+  border-radius: var(--radius-sm);
+  line-height: 1;
+}
+
+.insights-close:hover {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transform: scale(1.1);
+}
+
+.insights-stale {
+  background: rgba(255, 180, 162, 0.1);
+  border: 1px solid var(--color-accent-peach);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.insights-refresh {
+  background: var(--color-accent-peach);
+  border: none;
+  color: white;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.insights-refresh:hover {
+  background: var(--color-accent-peach-dark);
+  transform: translateY(-1px);
+}
+
+.insights-reflection {
+  margin-bottom: var(--space-5);
+}
+
+.insights-reflection-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-2);
+}
+
+.insights-reflection-text {
+  font-family: var(--font-journal);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-primary);
+  font-style: italic;
+  padding: var(--space-3);
+  background: linear-gradient(135deg, rgba(255, 180, 162, 0.05), rgba(196, 181, 253, 0.05));
+  border-left: 3px solid var(--color-accent-peach);
+  border-radius: var(--radius-sm);
+}
+
+.insights-tasks {
+  margin-bottom: var(--space-4);
+}
+
+.insights-tasks-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.insights-empty-tasks {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding: var(--space-4);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.insights-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.insights-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.insights-task-item:hover {
+  background: var(--color-bg-surface-hover);
+  border-color: var(--color-accent-sage);
+}
+
+.insights-task-checkbox {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--color-accent-sage);
+}
+
+.insights-task-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-normal);
+  flex: 1;
+}
+
+.insights-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.insights-btn-add-selected,
+.insights-btn-add-all {
+  flex: 1;
+  min-width: 140px;
+}
+
+.insights-privacy {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin-top: var(--space-4);
+  margin-bottom: 0;
+}
+
+/* === Toast Notifications === */
+.toast-notification {
+  position: fixed;
+  bottom: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--color-text-primary);
+  color: white;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  opacity: 0;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  pointer-events: none;
+}
+
+.toast-notification.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* === Responsive Design for Insights === */
+@media (max-width: 768px) {
+  .insights-panel {
+    padding: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  .insights-actions {
+    flex-direction: column;
+  }
+
+  .insights-btn-add-selected,
+  .insights-btn-add-all {
+    width: 100%;
+  }
+}
+
+/* === Already Added Task Styling === */
+.insights-task-item.already-added {
+  opacity: 0.6;
+  background: var(--color-bg-surface);
+  border-color: var(--color-border-light);
+  cursor: default;
+}
+
+.insights-task-item.already-added:hover {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border-light);
+}
+
+.insights-task-item.already-added .insights-task-text {
+  color: var(--color-text-tertiary);
+}
+
+.insights-task-item.already-added .insights-task-checkbox {
+  cursor: not-allowed;
+}
+
+.task-added-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent-sage);
+  font-weight: 600;
+  margin-left: auto;
+  white-space: nowrap;
+}
