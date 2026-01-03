@@ -237,6 +237,7 @@ button,
   align-items: center;
   gap: var(--space-4);
   flex-shrink: 0;
+  margin-bottom: var(--space-3);
 }
 
 .mood-label {
@@ -287,6 +288,15 @@ button,
   animation: fadeInUp var(--duration-slow) var(--ease-smooth) 0.1s backwards;
   min-height: 0;
   overflow: hidden;
+}
+
+.journal-entry-title {
+  font-family: var(--font-journal);
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+  letter-spacing: -0.01em;
 }
 
 /* Journal Input Wrapper */
@@ -621,6 +631,29 @@ button,
   align-items: center;
 }
 
+.icon-btn {
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: all var(--duration-fast) var(--ease-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.icon-btn:hover {
+  background: var(--color-bg-surface-hover);
+  color: var(--color-text-primary);
+  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .sidebar-title {
   font-size: var(--font-size-xl);
   font-weight: 600;
@@ -776,9 +809,36 @@ button,
 }
 
 .calendar-day.today {
-  background: linear-gradient(135deg, rgba(255, 180, 162, 0.2), rgba(196, 181, 253, 0.2));
-  color: var(--color-text-primary);
-  font-weight: 600;
+  background: var(--color-bg-primary);
+  color: var(--color-accent-peach);
+  font-weight: 700;
+  border: 1px solid var(--color-accent-peach);
+  box-shadow: 0 0 0 1px var(--color-accent-peach-light);
+}
+
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.btn-create-first {
+  background: var(--color-accent-peach);
+  color: white;
+  border: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-smooth);
+}
+
+.btn-create-first:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .calendar-day.has-entry::after {
@@ -900,6 +960,41 @@ button,
   background: var(--color-bg-surface-hover);
 }
 
+.todo-item.new-task-slot {
+  background: var(--color-bg-surface);
+  border: 1px dashed var(--color-border-light);
+  /* Thinner dash */
+  margin-top: var(--space-3);
+  padding: var(--space-4) var(--space-4);
+  /* Slightly more padding */
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.todo-item.new-task-slot:focus-within {
+  border-color: var(--color-accent-peach);
+  background: var(--color-bg-surface);
+  border-style: solid;
+  box-shadow: 0 4px 12px rgba(255, 180, 162, 0.15);
+  /* Soft shadow instead of heavy border */
+  transform: translateY(-1px);
+}
+
+.drag-handle {
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+  cursor: grab;
+  padding: 0 var(--space-1);
+  user-select: none;
+  opacity: 0.5;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+  touch-action: none;
+  /* Crucial for DragDropTouch polyfill */
+}
+
+.todo-item:hover .drag-handle {
+  opacity: 1;
+}
+
 .todo-bullet {
   color: var(--color-text-secondary);
   font-size: var(--font-size-base);
@@ -922,11 +1017,17 @@ button,
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
   line-height: var(--line-height-normal);
-  outline: none;
-  border: none;
+  outline: none !important;
+  /* Force remove browser outline */
+  border: none !important;
   background: transparent;
   cursor: text;
   min-height: 20px;
+}
+
+.todo-text:focus {
+  outline: none !important;
+  border: none !important;
 }
 
 .todo-text:empty::before {
@@ -966,22 +1067,23 @@ button,
   font-weight: bold;
 }
 
-/* Drag and Drop Styles */
+/* Drag and Drop Styles - Leveraging DragDropTouch Polyfill + SortableJS Native Mode */
+.sortable-ghost {
+  opacity: 0.1;
+  background: var(--color-bg-primary);
+}
+
+.sortable-chosen {
+  opacity: 1;
+  background: var(--color-bg-surface-hover);
+  box-shadow: var(--shadow-md);
+}
+
 .todo-item {
   transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, opacity 0.2s ease;
   position: relative;
-  cursor: grab;
-}
-
-.todo-item:active {
-  cursor: grabbing;
-}
-
-.todo-item.dragging {
-  opacity: 0.4;
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius-md);
-  cursor: grabbing;
+  touch-action: pan-y;
+  /* Allow scrolling on the list, but handled by DragDropTouch for drags */
 }
 
 /* Placeholder for Drag and Drop */
@@ -997,18 +1099,19 @@ button,
 
 /* Completed Section */
 .completed-section {
-  border-top: 1px solid var(--color-border-light);
-  padding-top: var(--space-4);
-  margin-top: auto;
+  border-top: 2px solid var(--color-border-light);
+  padding-top: var(--space-5);
+  margin-top: var(--space-6);
 }
 
 .completed-title {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
 }
 
 .completed-list {
@@ -1024,12 +1127,17 @@ button,
   padding: var(--space-2) var(--space-3);
   background: var(--color-bg-primary);
   border-radius: var(--radius-md);
-  opacity: 0.6;
 }
 
 .completed-item .todo-text {
   text-decoration: line-through;
   color: var(--color-text-tertiary);
+  opacity: 0.7;
+}
+
+.completed-item .todo-checkbox {
+  opacity: 1 !important;
+  /* Ensure checkbox remains high contrast */
 }
 
 .completed-item .todo-checkbox {
@@ -1080,25 +1188,27 @@ button,
 /* View Archived Button */
 .view-archived-btn {
   width: 100%;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-xs);
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-smooth);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: var(--space-4);
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .view-archived-btn:hover {
-  background: var(--color-bg-surface);
-  border-color: var(--color-accent-sage);
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
+}
+
+.view-archived-btn span {
+  text-decoration: none;
 }
 
 .archived-count {
@@ -1156,21 +1266,47 @@ button,
 .delete-all-btn {
   width: 100%;
   margin-top: var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   background: transparent;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid #ff6b6b;
   border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: #ff6b6b;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-smooth);
+  opacity: 0.8;
 }
 
 .delete-all-btn:hover {
   background: #ff6b6b;
-  border-color: #ff6b6b;
   color: white;
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.archive-all-btn {
+  width: 100%;
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  border: 1px solid var(--color-accent-peach);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-accent-peach-dark);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  opacity: 0.8;
+}
+
+.archive-all-btn:hover {
+  background: var(--color-accent-peach);
+  color: white;
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Archived Search */
@@ -1229,12 +1365,18 @@ button,
   padding: var(--space-2) var(--space-3);
   background: var(--color-bg-primary);
   border-radius: var(--radius-md);
-  opacity: 0.5;
+  /* opacity: 0.5; - Removed to keep actions high contrast */
 }
 
 .archived-item .todo-text {
   text-decoration: line-through;
   color: var(--color-text-tertiary);
+  opacity: 0.7;
+  /* Only fade the text */
+}
+
+.archived-item .todo-bullet {
+  opacity: 0.5;
 }
 
 .archived-actions {
@@ -1297,6 +1439,25 @@ button,
   margin-bottom: var(--space-3);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-smooth);
+  position: relative;
+}
+
+.entry-actions {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+  background: var(--color-bg-primary);
+  /* background to cover text if needed */
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.entry-item:hover .entry-actions {
+  opacity: 1;
 }
 
 .entry-item:hover {

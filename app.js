@@ -72,7 +72,17 @@ const elements = {
     reflectBtn: document.getElementById('reflectBtn'),
     reflectIcon: document.getElementById('reflectIcon'),
     reflectText: document.getElementById('reflectText'),
-    insightsPanel: document.getElementById('insightsPanel')
+    insightsPanel: document.getElementById('insightsPanel'),
+    archiveAllBtn: document.getElementById('archiveAllBtn'),
+    // Archived Entries Elements
+    archiveAllEntriesBtn: document.getElementById('archiveAllEntriesBtn'),
+    viewArchivedEntriesBtn: document.getElementById('viewArchivedEntriesBtn'),
+    archivedEntriesView: document.getElementById('archivedEntriesView'),
+    backFromArchivedEntriesBtn: document.getElementById('backFromArchivedEntriesBtn'),
+    deleteAllArchivedEntriesBtn: document.getElementById('deleteAllArchivedEntriesBtn'),
+    archivedEntriesCount: document.getElementById('archivedEntriesCount'),
+    archivedEntriesSearchInput: document.getElementById('archivedEntriesSearchInput'),
+    archivedEntriesList: document.getElementById('archivedEntriesList')
 };
 
 // === Utility Functions ===
@@ -157,7 +167,13 @@ function saveCurrentEntry(isSubmit = false) {
  */
 function updateCharacterCount() {
     const count = elements.journalTextarea.value.length;
-    elements.characterCount.textContent = `${count.toLocaleString()} character${count !== 1 ? 's' : ''}`;
+    if (count === 0) {
+        elements.characterCount.textContent = "No pressure—just start typing.";
+        elements.characterCount.style.fontStyle = 'italic';
+    } else {
+        elements.characterCount.textContent = `${count.toLocaleString()} character${count !== 1 ? 's' : ''}`;
+        elements.characterCount.style.fontStyle = 'normal';
+    }
 }
 
 /**
@@ -462,11 +478,14 @@ function renderTodos() {
         const isPriority = index < 3;
         const marker = isPriority ? `${index + 1}.` : '•';
         const markerClass = isPriority ? 'todo-number' : 'todo-bullet';
+        const isNewTask = !todo.text;
 
         return `
-    <div class="todo-item" 
+    <div class="todo-item ${isNewTask ? 'new-task-slot' : ''}" 
          data-index="${index}" 
+         draggable="${!isNewTask}"
          role="listitem">
+      ${!isNewTask ? '<span class="drag-handle">⋮⋮</span>' : ''}
       <span class="${markerClass}">${marker}</span>
       <div class="todo-text" 
            contenteditable="true" 
@@ -496,9 +515,9 @@ function initSortable() {
 
         todoListEl._sortable = new Sortable(todoListEl, {
             animation: 150,
-            handle: '.todo-item', // Whole item is a handle
-            delay: 100, // Slight delay to prevent accidental drags while scrolling on mobile
-            delayOnTouchOnly: true,
+            handle: '.drag-handle',
+            // DragDropTouch handles the touch-to-drag conversion, 
+            // so we treat it like a native desktop drag.
             onEnd: function (evt) {
                 const itemEl = evt.item;
                 const newIndex = evt.newIndex;
@@ -543,6 +562,7 @@ function renderCompleted() {
     }
 
     elements.completedSection.style.display = 'block';
+
     elements.completedList.innerHTML = completedTodos.map((todo, index) => {
         const actualIndex = todos.findIndex(t => t === todo);
         return `
@@ -712,6 +732,31 @@ function deleteAllArchived() {
 }
 
 /**
+ * Archive all completed tasks
+ */
+function archiveAllCompleted() {
+    // Collect indices first to avoid index shifting issues if we were splicing (though we're modifying props here)
+    let hasChanges = false;
+    todos.forEach(todo => {
+        if (todo.completed && !todo.archived) {
+            todo.archived = true;
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        saveTodos();
+        renderTodos();
+        renderArchived();
+    }
+}
+
+// Add Archive All listener
+if (elements.archiveAllBtn) {
+    elements.archiveAllBtn.addEventListener('click', archiveAllCompleted);
+}
+
+/**
  * Handle archived search
  */
 function handleArchivedSearch(e) {
@@ -862,16 +907,59 @@ function renderEntriesList(searchQuery = '') {
         });
     }
 
-    if (entryDates.length === 0) {
+    // Filter out archived entries unless we are searching
+    // If searching, we might want to include them? No, search usually searches active.
+    // Let's stick to active entries for the main list.
+    const activeEntryDates = entryDates.filter(date => !entries[date].archived);
+    const archivedEntryDates = entryDates.filter(date => entries[date].archived);
+
+    // Update Archived Count Button
+    if (archivedEntryDates.length > 0) {
+        elements.viewArchivedEntriesBtn.style.display = 'flex';
+        elements.archivedEntriesCount.textContent = archivedEntryDates.length;
+    } else {
+        elements.viewArchivedEntriesBtn.style.display = 'none';
+    }
+
+    // Update Archive All Visibility
+    if (elements.archiveAllEntriesBtn) {
+        const isArchivedViewHidden = elements.archivedEntriesView.style.display === 'none' || elements.archivedEntriesView.style.display === '';
+
+        if (isArchivedViewHidden && activeEntryDates.length > 0) {
+            elements.archiveAllEntriesBtn.style.display = 'block';
+        } else {
+            elements.archiveAllEntriesBtn.style.display = 'none';
+        }
+    }
+
+    if (activeEntryDates.length === 0) {
         if (searchQuery) {
             elements.entriesList.innerHTML = '<p class="empty-state">No entries match your search.</p>';
         } else {
-            elements.entriesList.innerHTML = '<p class="empty-state">No entries yet. Start writing!</p>';
+            elements.entriesList.innerHTML = `
+                <div class="empty-state-container">
+                    <p class="empty-state">No entries yet. Start writing!</p>
+                    <button id="createFirstEntryBtn" class="btn-create-first">Create first entry</button>
+                </div>`;
+
+            // Add listener for the new button
+            setTimeout(() => {
+                const createBtn = document.getElementById('createFirstEntryBtn');
+                if (createBtn) {
+                    createBtn.addEventListener('click', () => {
+                        elements.journalTextarea.focus();
+                        // Close sidebar on mobile
+                        if (window.innerWidth <= 768) {
+                            collapseSidebar();
+                        }
+                    });
+                }
+            }, 0);
         }
         return;
     }
 
-    elements.entriesList.innerHTML = entryDates.map(date => {
+    elements.entriesList.innerHTML = activeEntryDates.map(date => {
         const entry = entries[date];
         const isActive = date === currentEntry.date;
         const preview = entry.content.substring(0, PREVIEW_LENGTH);
@@ -879,6 +967,9 @@ function renderEntriesList(searchQuery = '') {
 
         return `
       <div class="entry-item ${isActive ? 'active' : ''}" data-date="${date}">
+        <div class="entry-actions">
+             <button class="archive-btn archive-entry-btn" title="Archive Entry" data-date="${date}">🗄️</button>
+        </div>
         <div class="entry-date">${formatDateShort(date)}</div>
         ${moodEmoji ? `<div class="entry-mood">${moodEmoji}</div>` : ''}
         <div class="entry-preview">${preview || 'No content'}</div>
@@ -888,7 +979,12 @@ function renderEntriesList(searchQuery = '') {
 
     // Add click handlers to entry items
     document.querySelectorAll('.entry-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+            // Check if archive button was clicked
+            if (e.target.closest('.archive-entry-btn')) {
+                return; // Let the specific handler handle it
+            }
+
             const date = item.dataset.date;
             loadEntryForDate(date);
             // On mobile, close sidebar
@@ -897,6 +993,17 @@ function renderEntriesList(searchQuery = '') {
             }
         });
     });
+
+    // Add Archive Entry listeners
+    document.querySelectorAll('.archive-entry-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const date = e.target.closest('.archive-entry-btn').dataset.date;
+            archiveEntry(date);
+        });
+    });
+
+
 }
 
 /**
@@ -1414,6 +1521,188 @@ function escapeHtml(text) {
 }
 
 
+// === Archived Entries Logic ===
+
+function archiveEntry(date) {
+    const entries = getAllEntries();
+    if (entries[date]) {
+        entries[date].archived = true;
+        saveAllEntries(entries);
+        renderEntriesList(elements.entrySearchInput.value);
+        showToast('Entry archived');
+    }
+}
+
+function unarchiveEntry(date) {
+    const entries = getAllEntries();
+    if (entries[date]) {
+        entries[date].archived = false;
+        saveAllEntries(entries);
+        renderArchivedEntriesList(elements.archivedEntriesSearchInput.value);
+        renderEntriesList(elements.entrySearchInput.value);
+        showToast('Entry unarchived');
+    }
+}
+
+function deleteEntry(date) {
+    if (confirm('Are you sure you want to delete this entry?')) {
+        const entries = getAllEntries();
+        delete entries[date];
+        saveAllEntries(entries);
+        renderArchivedEntriesList(elements.archivedEntriesSearchInput.value);
+
+        // If it was current entry, reset to today
+        if (currentEntry.date === date) {
+            loadTodayEntry();
+        }
+        showToast('Entry deleted');
+    }
+}
+
+function archiveAllEntries() {
+    const entries = getAllEntries();
+    let hasChanges = false;
+    Object.keys(entries).forEach(date => {
+        if (!entries[date].archived) {
+            entries[date].archived = true;
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        saveAllEntries(entries);
+        renderEntriesList();
+        renderArchivedEntriesList();
+        showToast('All entries archived');
+    }
+}
+
+function deleteAllArchivedEntries() {
+    if (confirm('Are you sure you want to delete ALL archived entries? This cannot be undone.')) {
+        const entries = getAllEntries();
+        const dates = Object.keys(entries);
+        let count = 0;
+        dates.forEach(date => {
+            if (entries[date].archived) {
+                delete entries[date];
+                count++;
+            }
+        });
+
+        if (count > 0) {
+            saveAllEntries(entries);
+            renderArchivedEntriesList();
+            // Switch back to normal view if empty
+            showEntriesView();
+            showToast('All archived entries deleted');
+        }
+    }
+}
+
+function renderArchivedEntriesList(searchQuery = '') {
+    const entries = getAllEntries();
+    let entryDates = Object.keys(entries).sort().reverse();
+
+    // Filter for archived
+    let archivedDates = entryDates.filter(date => entries[date].archived);
+
+    // Search filter
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        archivedDates = archivedDates.filter(date => {
+            const entry = entries[date];
+            const contentMatch = entry.content && entry.content.toLowerCase().includes(query);
+            const moodMatch = entry.mood && entry.mood.toLowerCase().includes(query);
+            const dateMatch = formatDateShort(date).toLowerCase().includes(query);
+            return contentMatch || moodMatch || dateMatch;
+        });
+    }
+
+    if (archivedDates.length === 0) {
+        elements.archivedEntriesList.innerHTML = '<p class="empty-state">No archived entries found.</p>';
+        return;
+    }
+
+    elements.archivedEntriesList.innerHTML = archivedDates.map(date => {
+        const entry = entries[date];
+        const preview = entry.content.substring(0, PREVIEW_LENGTH);
+        const moodEmoji = entry.mood ? getMoodEmoji(entry.mood) : '';
+        return `
+           <div class="entry-item archived-entry-item" data-date="${date}">
+             <div class="entry-actions">
+                 <button class="unarchive-btn unarchive-entry-btn" data-date="${date}">Unarchive</button>
+                 <button class="delete-btn delete-entry-btn" title="Delete" data-date="${date}">🗑️</button>
+             </div>
+             <div class="entry-date">${formatDateShort(date)}</div>
+             ${moodEmoji ? `<div class="entry-mood">${moodEmoji}</div>` : ''}
+             <div class="entry-preview">${preview || 'No content'}</div>
+           </div>
+         `;
+    }).join('');
+
+    // Listeners for buttons (unarchive, delete) - Prevent event bubbling
+    document.querySelectorAll('.unarchive-entry-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const date = e.target.dataset.date;
+            unarchiveEntry(date);
+        });
+    });
+
+    document.querySelectorAll('.delete-entry-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const date = e.target.dataset.date;
+            deleteEntry(date);
+        });
+    });
+}
+
+function showArchivedEntriesView() {
+    if (elements.entrySearchInput) elements.entrySearchInput.closest('.search-container').style.display = 'none';
+    elements.entriesList.style.display = 'none';
+    elements.archiveAllEntriesBtn.style.display = 'none';
+    elements.viewArchivedEntriesBtn.style.display = 'none';
+
+    elements.archivedEntriesView.style.display = 'flex';
+    renderArchivedEntriesList();
+}
+
+function showEntriesView() {
+    if (elements.entrySearchInput) elements.entrySearchInput.closest('.search-container').style.display = 'block';
+
+    elements.archivedEntriesView.style.display = 'none';
+    elements.entriesList.style.display = 'block';
+
+    // These will be properly set by renderEntriesList
+    renderEntriesList();
+}
+
+function setupEntryArchivingListeners() {
+    if (elements.viewArchivedEntriesBtn) {
+        elements.viewArchivedEntriesBtn.addEventListener('click', showArchivedEntriesView);
+    }
+
+    if (elements.backFromArchivedEntriesBtn) {
+        elements.backFromArchivedEntriesBtn.addEventListener('click', showEntriesView);
+    }
+
+    if (elements.deleteAllArchivedEntriesBtn) {
+        elements.deleteAllArchivedEntriesBtn.addEventListener('click', deleteAllArchivedEntries);
+    }
+
+    if (elements.archivedEntriesSearchInput) {
+        elements.archivedEntriesSearchInput.addEventListener('input', (e) => {
+            renderArchivedEntriesList(e.target.value);
+        });
+    }
+
+    if (elements.archiveAllEntriesBtn) {
+        elements.archiveAllEntriesBtn.addEventListener('click', archiveAllEntries);
+    }
+}
+
+
 /**
  * Initialize the app
  */
@@ -1455,6 +1744,9 @@ function init() {
     elements.nextMonthBtn.addEventListener('click', nextMonth);
     elements.collapseTodoBtn.addEventListener('click', collapseTodoSidebar);
     elements.expandTodoBtn.addEventListener('click', expandTodoSidebar);
+
+    // Add new listeners
+    setupEntryArchivingListeners();
     elements.viewArchivedBtn.addEventListener('click', showArchivedView);
     elements.backFromArchivedBtn.addEventListener('click', showTodoView);
     elements.deleteAllArchivedBtn.addEventListener('click', deleteAllArchived);
