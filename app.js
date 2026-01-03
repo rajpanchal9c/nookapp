@@ -462,13 +462,10 @@ function renderTodos() {
         const isPriority = index < 3;
         const marker = isPriority ? `${index + 1}.` : '•';
         const markerClass = isPriority ? 'todo-number' : 'todo-bullet';
-        // Disable drag on mobile to fix scrolling issues
-        const isDraggable = !isMobile && !!todo.text;
 
         return `
     <div class="todo-item" 
          data-index="${index}" 
-         draggable="${isDraggable}" 
          role="listitem">
       <span class="${markerClass}">${marker}</span>
       <div class="todo-text" 
@@ -481,143 +478,58 @@ function renderTodos() {
 
     // Add event listeners
     addTodoEventListeners();
-    addDragAndDropListeners();
+    initSortable();
 
     // Render completed and archived sections
     renderCompleted();
     renderArchived();
 }
 
-/**
- * Add drag and drop listeners
- */
-function addDragAndDropListeners() {
-    const items = elements.todoList.querySelectorAll('.todo-item[draggable="true"]');
-
-    items.forEach(item => {
-        item.addEventListener('dragstart', handleDragStart);
-        item.addEventListener('dragend', handleDragEnd);
-    });
-
-    // Attach dragover and drop to the container, not individual items
-    elements.todoList.addEventListener('dragover', handleDragOver);
-    elements.todoList.addEventListener('drop', handleDrop);
-}
-
-let draggedItem = null;
-let placeholder = null;
-
-function handleDragStart(e) {
-    draggedItem = this;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', this.dataset.index);
-
-    // Create placeholder
-    placeholder = document.createElement('div');
-    placeholder.className = 'todo-placeholder';
-
-    // Delay adding class to keep the drag image visible
-    setTimeout(() => {
-        this.classList.add('dragging');
-        this.style.display = 'none'; // Hide the original item
-        // Insert placeholder after the dragged item initially
-        this.parentNode.insertBefore(placeholder, this.nextSibling);
-    }, 0);
-}
-
-function handleDragEnd(e) {
-    this.classList.remove('dragging');
-    this.style.display = ''; // Show item again
-    draggedItem = null;
-
-    // Remove placeholder
-    if (placeholder && placeholder.parentNode) {
-        placeholder.parentNode.removeChild(placeholder);
-    }
-    placeholder = null;
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-
-    if (!draggedItem || !placeholder) return;
-
-    const todoList = elements.todoList;
-    const afterElement = getDragAfterElement(todoList, e.clientY);
-
-    if (afterElement == null) {
-        todoList.appendChild(placeholder);
-    } else {
-        todoList.insertBefore(placeholder, afterElement);
-    }
-}
-
-// Helper to find the element after the cursor
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.todo-item:not(.dragging)')];
-
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
+// Initialize SortableJS
+function initSortable() {
+    if (typeof Sortable !== 'undefined') {
+        const todoListEl = elements.todoList;
+        // Destroy existing instance if any (to avoid duplicates on re-render)
+        if (todoListEl._sortable) {
+            todoListEl._sortable.destroy();
         }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
 
+        todoListEl._sortable = new Sortable(todoListEl, {
+            animation: 150,
+            handle: '.todo-item', // Whole item is a handle
+            delay: 100, // Slight delay to prevent accidental drags while scrolling on mobile
+            delayOnTouchOnly: true,
+            onEnd: function (evt) {
+                const itemEl = evt.item;
+                const newIndex = evt.newIndex;
+                const oldIndex = evt.oldIndex;
 
-function handleDrop(e) {
-    e.preventDefault();
+                if (newIndex === oldIndex) return;
 
-    if (!draggedItem || !placeholder) return;
+                // Sync data model
+                const activeTodos = todos.filter(t => !t.completed && !t.archived);
+                const movedTodo = activeTodos[oldIndex];
 
-    const fromIndex = parseInt(draggedItem.dataset.index);
+                // Remove from old position
+                activeTodos.splice(oldIndex, 1);
+                // Insert at new position
+                activeTodos.splice(newIndex, 0, movedTodo);
 
-    // Get active and completed todos
-    const activeTodos = todos.filter(t => !t.completed);
-    const completedTodos = todos.filter(t => t.completed);
+                // Reconstruct main todos array
+                // We need to preserve the relative order of completed/archived items
+                // This simple approach appends active first, then others. 
+                // A more robust app might track IDs, but this fits the current data model.
+                const otherTodos = todos.filter(t => t.completed || t.archived);
+                todos = [...activeTodos, ...otherTodos];
 
-    // Get the dragged todo
-    const draggedTodo = activeTodos[fromIndex];
-
-    if (!draggedTodo) {
-        return;
-    }
-
-    // Remove dragged todo from active list
-    const remainingTodos = activeTodos.filter((_, i) => i !== fromIndex);
-
-    // Find where to insert based on placeholder position
-    const children = [...elements.todoList.children];
-    const placeholderPosition = children.indexOf(placeholder);
-
-    // Count how many visible todo items come before the placeholder
-    // Exclude empty tasks (tasks with no text)
-    let insertPosition = 0;
-    for (let i = 0; i < placeholderPosition; i++) {
-        const child = children[i];
-        if (child.classList.contains('todo-item') && child !== draggedItem) {
-            // Check if this is a real task (not the empty slot)
-            const childIndex = parseInt(child.dataset.index);
-            if (childIndex < activeTodos.length && activeTodos[childIndex].text) {
-                insertPosition++;
+                saveTodos();
+                renderTodos();
             }
-        }
+        });
     }
-
-    // Insert dragged todo at the new position
-    remainingTodos.splice(insertPosition, 0, draggedTodo);
-
-    // Update todos array
-    todos = [...remainingTodos, ...completedTodos];
-
-    saveTodos();
-    renderTodos();
 }
+
+// Custom drag and drop logic removed in favor of SortableJS
 
 /**
  * Render completed todos
