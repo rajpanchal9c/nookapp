@@ -1,7 +1,35 @@
+// In-memory rate limit store. Resets whenever the serverless instance cold-starts,
+// so this is a best-effort cap, not a hard guarantee across all instances.
+const rateLimitStore = new Map();
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+function isRateLimited(ip) {
+    const now = Date.now();
+    const entry = rateLimitStore.get(ip);
+
+    if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+        rateLimitStore.set(ip, { windowStart: now, count: 1 });
+        return false;
+    }
+
+    entry.count += 1;
+    return entry.count > RATE_LIMIT_MAX;
+}
+
 export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    if (isRateLimited(ip)) {
+        return res.status(429).json({
+            error: 'Too many requests',
+            reflection: "You've used up your reflections for now. Please try again in a bit.",
+            tasks: []
+        });
     }
 
     try {
@@ -14,6 +42,9 @@ export default async function handler(req, res) {
                 tasks: []
             });
         }
+
+        // Cap input size so this endpoint can't be used as a free-form LLM proxy
+        const trimmedEntry = entryText.trim().slice(0, 8000);
 
         // Get API key from environment variable
         const apiKey = process.env.GROQ_API_KEY;
@@ -57,7 +88,7 @@ Return ONLY valid JSON in this exact format:
 }${moodContext}
 
 Journal entry:
-${entryText}`;
+${trimmedEntry}`;
 
         // Call Groq API using fetch
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {

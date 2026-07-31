@@ -134,7 +134,7 @@ function saveAllEntries(entries) {
         localStorage.setItem('journalEntries', JSON.stringify(entries));
     } catch (error) {
         console.error('Error saving to localStorage:', error);
-        // Could show user notification here
+        showToast('⚠️ Could not save — your browser storage may be full or disabled.');
     }
 }
 
@@ -460,6 +460,7 @@ function saveTodos() {
         localStorage.setItem('todos', JSON.stringify(todos));
     } catch (error) {
         console.error('Error saving todos:', error);
+        showToast('⚠️ Could not save — your browser storage may be full or disabled.');
     }
 }
 

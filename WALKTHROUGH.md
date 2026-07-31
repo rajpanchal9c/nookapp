@@ -156,7 +156,7 @@
 - **Minimalist**: Clean, distraction-free interface
 - **Responsive**: Adapts to your screen size
 - **Smooth Animations**: Polished interactions
-- **Dark Mode Ready**: Easy on the eyes
+- **Calm Palette**: Easy on the eyes
 
 ---
 

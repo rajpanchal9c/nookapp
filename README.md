@@ -2,7 +2,7 @@
 
 **Nook** is a minimalist, privacy-first personal space for your thoughts and tasks. It combines a daily journal with a smart to-do list, all stored locally in your browser.
 
-![Nook App](https://via.placeholder.com/800x400?text=Nook+App+Preview)
+<!-- TODO: add a real screenshot of the app here before launch -->
 
 ## ✨ Features
 
@@ -11,7 +11,7 @@
 - **🗄️ Archive System**: Keep your workspace clean by archiving completed tasks.
 - **🔒 Privacy First**: All data is stored in `localStorage`. Nothing leaves your device.
 - **💾 Import/Export**: Full JSON backup and restore functionality.
-- **🎨 Beautiful Design**: Calming colors, smooth animations, and dark mode support.
+- **🎨 Beautiful Design**: Calming colors, smooth animations, and a responsive layout.
 
 ## 🚀 Deployment
 
@@ -45,6 +45,10 @@ Then open `http://localhost:8000` in your browser.
 ## 📖 User Guide
 
 Check out [WALKTHROUGH.md](./WALKTHROUGH.md) for a comprehensive guide on how to use all features.
+
+## 🔒 Privacy
+
+See [privacy.html](./privacy.html) for details on what's stored locally and what the optional AI reflection feature sends to Groq.
 
 ## 📄 License
 
