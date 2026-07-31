@@ -1,18 +1,17 @@
-# AI Task Suggestions - Setup Guide
+# AI "Reflect with Nook" - Setup Guide
 
-This guide will help you set up the AI-powered task suggestion feature using Google's Gemini API.
+This guide will help you set up the AI-powered reflection feature using Groq's API.
 
 ## Prerequisites
 
-- A Google account
+- A Groq account
 - Access to your Vercel dashboard
 
-## Step 1: Get Your Gemini API Key
+## Step 1: Get Your Groq API Key
 
-1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Click **"Get API Key"** or **"Create API Key"**
-3. Select **"Create API key in new project"** (or use an existing project)
-4. Copy the API key (it will look like: `AIzaSy...`)
+1. Go to [Groq Console](https://console.groq.com/keys)
+2. Click **"Create API Key"**
+3. Copy the API key (it will look like: `gsk_...`)
 
 ⚠️ **Important:** Keep this key secret! Never commit it to GitHub.
 
@@ -22,7 +21,7 @@ This guide will help you set up the AI-powered task suggestion feature using Goo
 2. Select your **nookapp** project
 3. Go to **Settings** → **Environment Variables**
 4. Add a new variable:
-   - **Name:** `GEMINI_API_KEY`
+   - **Name:** `GROQ_API_KEY`
    - **Value:** Paste your API key from Step 1
    - **Environment:** Select all (Production, Preview, Development)
 5. Click **Save**
@@ -42,33 +41,36 @@ OR just push a new commit to GitHub (which you'll do anyway with these changes).
 1. Go to your live site: `https://nookapp.vercel.app`
 2. Write a journal entry like:
    ```
-   I need to finish the presentation for Monday's meeting. 
-   Also, I should email Sarah about the project update and 
+   I need to finish the presentation for Monday's meeting.
+   Also, I should email Sarah about the project update and
    schedule a call with the design team.
    ```
-3. Click **"✨ Suggest Tasks"**
-4. The AI should extract tasks like:
+3. Click **"✨ Reflect with Nook"**
+4. You should see a short, empathetic reflection on the entry, plus extracted tasks like:
    - Finish presentation for Monday
    - Email Sarah about project update
    - Schedule call with design team
 
 ## How It Works
 
-- **Free Tier Limits:** 15 requests/minute, 1,500 requests/day
-- **Cost:** Free for your current usage
-- **Model:** Gemini 1.5 Flash (fast and efficient)
-- **Privacy:** Journal content is sent to Google's API for processing
+- **Model:** `llama-3.1-8b-instant` via Groq's OpenAI-compatible API
+- **Endpoint:** `/api/insights` (Vercel serverless function)
+- **Cost:** Fractions of a cent per call at Groq's current pricing
+- **Rate limiting:** The endpoint caps requests per IP address (20/hour) to control abuse and cost
+- **Privacy:** Journal content is sent to Groq's API for processing, and is not stored by Nook
 
 ## Troubleshooting
 
 ### "AI service not configured" error
-- Make sure you added the `GEMINI_API_KEY` environment variable in Vercel
+- Make sure you added the `GROQ_API_KEY` environment variable in Vercel
 - Redeploy after adding the variable
 
-### "Failed to generate suggestions" error
+### "AI service error" / "Failed to generate insights"
 - Check that your API key is valid
-- Make sure you haven't exceeded the free tier limits (15 req/min)
-- Check Vercel function logs for detailed errors
+- Check Vercel function logs for detailed errors from the Groq API
+
+### "Too many requests" error
+- The endpoint is rate-limited to 20 requests/hour per IP. Wait and try again.
 
 ### No tasks extracted
 - Try writing more specific, actionable content
@@ -85,20 +87,12 @@ OR just push a new commit to GitHub (which you'll do anyway with these changes).
 - "Feeling stressed about work" (too vague)
 - "Had a good day" (no actions)
 
-## Future Enhancements
-
-Once you validate this feature, you can add:
-- Weekly reflection summaries
-- Journal prompt generator
-- Mood-based task prioritization
-- Smart title generation for entries
-
 ## Support
 
 If you run into issues, check:
 1. Vercel deployment logs
 2. Browser console for errors
-3. Google AI Studio quota page
+3. [Groq Console](https://console.groq.com) for API status/usage
 
 ---
 

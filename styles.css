@@ -20,15 +20,17 @@
   /* Light gray for placeholders */
 
   --color-accent-peach: #FFB4A2;
-  /* Warm peach */
+  /* Warm peach - decorative use only, fails text contrast */
   --color-accent-peach-dark: #E59A8A;
   /* Darker peach for hover */
+  --color-accent-peach-text: #A84A28;
+  /* WCAG AA-safe peach for text/icons on light backgrounds (5.3:1) */
+  --color-accent-peach-light: #FFE3D9;
+  /* Light peach glow, e.g. calendar "today" ring */
   --color-accent-lavender: #C4B5FD;
   /* Soft lavender */
   --color-accent-sage: #B8E6D5;
   /* Calming sage green */
-  --color-accent-gold: #F4D19B;
-  /* Gentle gold */
 
   --color-border-light: #E8E5E0;
   /* Subtle borders */
@@ -398,7 +400,7 @@ button,
 .btn-ai-float .ai-text {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: white;
+  color: var(--color-text-primary);
   white-space: nowrap;
   opacity: 0;
   width: 0;
@@ -547,7 +549,7 @@ button,
 }
 
 .feedback-link:hover {
-  color: var(--color-accent-peach);
+  color: var(--color-accent-peach-text);
   text-decoration: underline;
 }
 
@@ -810,7 +812,7 @@ button,
 
 .calendar-day.today {
   background: var(--color-bg-primary);
-  color: var(--color-accent-peach);
+  color: var(--color-accent-peach-text);
   font-weight: 700;
   border: 1px solid var(--color-accent-peach);
   box-shadow: 0 0 0 1px var(--color-accent-peach-light);
@@ -826,7 +828,7 @@ button,
 
 .btn-create-first {
   background: var(--color-accent-peach);
-  color: white;
+  color: var(--color-text-primary);
   border: none;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -858,7 +860,7 @@ button,
 
 .calendar-day.selected {
   background: var(--color-accent-lavender);
-  color: white;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 
@@ -1004,7 +1006,7 @@ button,
 }
 
 .todo-number {
-  color: var(--color-accent-peach);
+  color: var(--color-accent-peach-text);
   font-weight: 600;
   font-size: var(--font-size-sm);
   flex-shrink: 0;
@@ -1062,7 +1064,7 @@ button,
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
+  color: var(--color-text-primary);
   font-size: 12px;
   font-weight: bold;
 }
@@ -1151,7 +1153,7 @@ button,
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
+  color: var(--color-text-primary);
   font-size: 12px;
   font-weight: bold;
 }
@@ -1213,7 +1215,7 @@ button,
 
 .archived-count {
   background: var(--color-accent-peach);
-  color: white;
+  color: var(--color-text-primary);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);
@@ -1253,7 +1255,7 @@ button,
 .back-btn:hover {
   background: var(--color-bg-surface);
   border-color: var(--color-accent-peach);
-  color: var(--color-accent-peach);
+  color: var(--color-accent-peach-text);
 }
 
 .archived-view-title {
@@ -1268,18 +1270,18 @@ button,
   margin-top: var(--space-4);
   padding: var(--space-2) var(--space-4);
   background: transparent;
-  border: 1px solid #ff6b6b;
+  border: 1px solid #C92A2A;
   border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  color: #ff6b6b;
+  color: #C92A2A;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-smooth);
   opacity: 0.8;
 }
 
 .delete-all-btn:hover {
-  background: #ff6b6b;
+  background: #C92A2A;
   color: white;
   opacity: 1;
   transform: translateY(-1px);
@@ -1303,7 +1305,7 @@ button,
 
 .archive-all-btn:hover {
   background: var(--color-accent-peach);
-  color: white;
+  color: var(--color-text-primary);
   opacity: 1;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
@@ -1400,7 +1402,7 @@ button,
 .unarchive-btn:hover {
   background: var(--color-accent-peach);
   border-color: var(--color-accent-peach);
-  color: white;
+  color: var(--color-text-primary);
 }
 
 .delete-archived-btn {
@@ -1580,7 +1582,7 @@ button,
 
 .btn-submit {
   background: linear-gradient(135deg, var(--color-accent-peach), var(--color-accent-lavender));
-  color: white;
+  color: var(--color-text-primary);
   box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
@@ -1602,7 +1604,7 @@ button,
 
 .btn-primary {
   background: linear-gradient(135deg, var(--color-accent-peach), var(--color-accent-lavender));
-  color: white;
+  color: var(--color-text-primary);
   box-shadow: var(--shadow-sm);
 }
 
@@ -1969,7 +1971,7 @@ button,
   width: 100%;
   padding: var(--space-4);
   background: var(--color-accent-peach);
-  color: white;
+  color: var(--color-text-primary);
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
@@ -2075,7 +2077,7 @@ button,
 .insights-refresh {
   background: var(--color-accent-peach);
   border: none;
-  color: white;
+  color: var(--color-text-primary);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
